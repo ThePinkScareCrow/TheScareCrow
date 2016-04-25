@@ -9,6 +9,7 @@
 #include "motor.hpp"
 #include <string.h>
 #include <stdlib.h>
+#include "BlackLib/BlackPWM.h"
 
 #define MAX_PAYLOAD_SIZE 32
 
@@ -41,7 +42,7 @@ const uint8_t pipes[][6] = {"1Node","2Node"};
 char radio_msg[32];
 
 Motor *motors[4];
-const BlackLib::pwnName motor_pins[4] = {
+const enum BlackLib::pwmName motor_pins[4] = {
 	BlackLib::EHRPWM1A,
 	BlackLib::EHRPWM1B,
 	BlackLib::EHRPWM2A,
@@ -102,9 +103,9 @@ void parse_and_execute(char *control_string)
 			if (ypr_update_index != -1
 			    && pid_update_index != -1) {
 				pid_tunings[ypr_update_index][pid_update_index] = numeric_value;
-				SetTunings(pid_tunings[ypr_update_index][0],
-					   pid_tunings[ypr_update_index][1],
-					   pid_tunings[ypr_update_index][2]);
+				pids_ypr[ypr_update_index]->SetTunings(pid_tunings[ypr_update_index][0],
+								       pid_tunings[ypr_update_index][1],
+								       pid_tunings[ypr_update_index][2]);
 			} else
 				fprintf(stderr, "Bad input");
 		}
@@ -154,9 +155,9 @@ void setup()
 void loop()
 {
 	static float yaw_target = 0;
-	char *control_string;
+	char control_string[15];
 
-	uint8_t payloadSize = MAX_PAYLOAD_SIZE
+	uint8_t payloadSize = MAX_PAYLOAD_SIZE;
 	uint16_t channels[4];
 	float motor[4];
 
@@ -190,13 +191,13 @@ void loop()
 
 	/* If radio has data, read the damn data */
 	if (radio.available()) {
-		control_string = "";
 		while (radio.available()) {
-			if((length = radio.getPayloadSize() < 1){
-				fprintf(stderr, "%s\n", "Corrupt Packet");;
+			uint8_t length = radio.getPayloadSize();
+			if(length < 1){
+				fprintf(stderr, "%s\n", "Corrupt Packet");
 			}
 			radio.read(control_string, length);
-			cout << radio_msg << endl;
+			cout << "radio: " << radio_msg << endl;
 			parse_and_execute(control_string);
 		}
                 /* TODO: Convert radio_msg into control_string cleanly. Consider strtok() */
@@ -215,7 +216,7 @@ void loop()
 		/* Ensure that update_flag is set when throttle is changed */
 		if (throttle < 2) {
 			for (int i = 0; i < 4; i++)
-				motors[i].set_power(0);
+				motors[i]->set_power(0);
 		} else {
 			/* The output of the PID must be positive in
 			 * the direction of positive rotation
@@ -223,10 +224,10 @@ void loop()
 			 *
 			 * For yaw, motors 0 & 2 move anticlockwise from above.
 			 */
-			motors[0]->set_power(throttle - pids_ypr[0] + pids_ypr[1] - pids_ypr[2]);
-			motors[1]->set_power(throttle + pids_ypr[0] - pids_ypr[1] - pids_ypr[2]);
-			motors[2]->set_power(throttle - pids_ypr[0] - pids_ypr[1] + pids_ypr[2]);
-			motors[3]->set_power(throttle + pids_ypr[0] + pids_ypr[1] + pids_ypr[2]);
+			motors[0]->set_power(throttle - pids_output_ypr[0] + pids_output_ypr[1] - pids_output_ypr[2]);
+			motors[1]->set_power(throttle + pids_output_ypr[0] - pids_output_ypr[1] - pids_output_ypr[2]);
+			motors[2]->set_power(throttle - pids_output_ypr[0] - pids_output_ypr[1] + pids_output_ypr[2]);
+			motors[3]->set_power(throttle + pids_output_ypr[0] + pids_output_ypr[1] + pids_output_ypr[2]);
 		}
 	}
 
