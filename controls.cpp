@@ -24,12 +24,12 @@ uint8_t fifo_buffer[64]; /* FIFO storage buffer */
 
 Quaternion q;           /* [w, x, y, z]         quaternion container */
 VectorFloat gravity;    /* [x, y, z]            gravity vector */
-double actual_ypr[3];   /* [yaw, pitch, roll]   yaw/pitch/roll container and gravity vector */
+float actual_ypr[3];    /* [yaw, pitch, roll]   yaw/pitch/roll container and gravity vector */
 
 PID *pids_ypr[3];
-double desired_ypr[3] = {0, 0, 0};
-double pids_output_ypr[3];
-double pid_tunings[3][3] = {
+float desired_ypr[3] = {0, 0, 0};
+float pids_output_ypr[3];
+float pid_tunings[3][3] = {
 	{0, 0, 0},
 	{0, 0, 0},
 	{0, 0, 0}
@@ -177,7 +177,7 @@ void loop()
 		mpu.getFIFOBytes(fifo_buffer, packet_size);
 		mpu.dmpGetQuaternion(&q, fifo_buffer);
 		mpu.dmpGetGravity(&gravity, &q);
-		mpu.dmpGetYawPitchRoll((float *) actual_ypr, &q, &gravity);
+		mpu.dmpGetYawPitchRoll(actual_ypr, &q, &gravity);
 
 		cout << std::time(0) << " " << fifo_count << " ";
 		for (int i = 0; i < 3; i++) {
