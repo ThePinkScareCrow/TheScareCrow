@@ -15,8 +15,6 @@ public:
 	PID(float*, float*, float*,        // * constructor.  links the PID to the Input, Output, and
 	    float, float, float, int);     //   Setpoint.  Initial tuning parameters are also set here
 
-	void SetMode(int Mode);               // * sets PID to either Manual (0) or Auto (non-0)
-
 	bool Compute();                       // * performs the PID calculation.  it should be
 	//   called every time loop() cycles. ON/OFF and
 	//   calculation frequency can be set using SetMode
@@ -45,7 +43,6 @@ public:
 	float GetKp();						  // These functions query the pid for interal values.
 	float GetKi();						  //  they were created mainly for the pid front-end,
 	float GetKd();						  // where it's important to know what is actually
-	int GetMode();						  //  inside the PID.
 	int GetDirection();					  //
 
 private:
@@ -71,6 +68,5 @@ private:
 
 	unsigned long SampleTime;
 	float outMin, outMax;
-	bool inAuto;
 };
 #endif

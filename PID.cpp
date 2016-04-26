@@ -27,7 +27,6 @@ PID::PID(float* Input, float* Output, float* Setpoint,
 	myOutput = Output;
 	myInput = Input;
 	mySetpoint = Setpoint;
-	inAuto = false;
 
 	PID::SetOutputLimits(0, 255);				//default output limit corresponds to
 	//the arduino pwm limits
@@ -49,7 +48,6 @@ PID::PID(float* Input, float* Output, float* Setpoint,
  **********************************************************************************/
 bool PID::Compute()
 {
-	if(!inAuto) return false;
 	unsigned long now = millis();
 	unsigned long timeChange = (now - lastTime);
 	if(timeChange >= SampleTime)
@@ -138,33 +136,15 @@ void PID::SetOutputLimits(float Min, float Max)
 	outMin = Min;
 	outMax = Max;
 
-	if (inAuto)
-	{
-		if (*myOutput > outMax)
-			*myOutput = outMax;
-		else if (*myOutput < outMin)
-			*myOutput = outMin;
+	if (*myOutput > outMax)
+		*myOutput = outMax;
+	else if (*myOutput < outMin)
+		*myOutput = outMin;
 
-		if (ITerm > outMax)
-			ITerm= outMax;
-		else if (ITerm < outMin)
-			ITerm= outMin;
-	}
-}
-
-/* SetMode(...)****************************************************************
- * Allows the controller Mode to be set to manual (0) or Automatic (non-zero)
- * when the transition from manual to auto occurs, the controller is
- * automatically initialized
- ******************************************************************************/
-void PID::SetMode(int Mode)
-{
-	bool newAuto = (Mode == AUTOMATIC);
-	if (newAuto == !inAuto)
-	{  /*we just went from manual to auto*/
-		PID::Initialize();
-	}
-	inAuto = newAuto;
+	if (ITerm > outMax)
+		ITerm= outMax;
+	else if (ITerm < outMin)
+		ITerm= outMin;
 }
 
 /* Initialize()****************************************************************
@@ -189,7 +169,7 @@ void PID::Initialize()
  ******************************************************************************/
 void PID::SetControllerDirection(int Direction)
 {
-	if (inAuto && Direction !=controllerDirection)
+	if (Direction !=controllerDirection)
 	{
 		kp = (0 - kp);
 		ki = (0 - ki);
@@ -216,11 +196,6 @@ float PID::GetKi()
 float PID::GetKd()
 {
 	return  dispKd;
-}
-
-int PID::GetMode()
-{
-	return  inAuto ? AUTOMATIC : MANUAL;
 }
 
 int PID::GetDirection()
