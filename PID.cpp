@@ -7,6 +7,9 @@
 
 #include "PID.h"
 #include <time.h>
+#include <iostream>
+
+#define DEBUG_PID 0
 
 struct timespec time_struct;
 
@@ -55,6 +58,7 @@ bool PID::Compute()
 		/*Compute all the working error variables*/
 		float input = *myInput;
 		float error = *mySetpoint - input;
+		float PTerm, DTerm;
 		ITerm += (ki * error);
 		if (ITerm > outMax)
 			ITerm= outMax;
@@ -62,8 +66,17 @@ bool PID::Compute()
 			ITerm= outMin;
 		float dInput = (input - lastInput);
 
+		PTerm = kp * error;
+		DTerm = - kd * dInput;
+
 		/*Compute PID Output*/
-		float output = kp * error + ITerm - kd * dInput;
+		float output = PTerm + ITerm + DTerm;
+
+		#if DEBUG_PID
+
+		cout << PTerm << " " << ITerm << " " << DTerm << "|" << endl;
+
+		#endif
 
 		if (output > outMax)
 			output = outMax;

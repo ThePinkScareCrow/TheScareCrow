@@ -11,6 +11,9 @@
 #include <stdlib.h>
 #include "BlackLib/BlackPWM.h"
 
+#define DEBUG_MODE 0
+#define DEBUG_MODE_WITH_PID 0
+
 using namespace std;
 
 MPU6050 mpu;
@@ -155,6 +158,7 @@ void loop()
 	char control_string[15];
 	uint16_t channels[4];
 	float motor[4];
+	int max_fifo_count = 0;
 
 	fifo_count = mpu.getFIFOCount();
 
@@ -167,6 +171,8 @@ void loop()
 
 	while (fifo_count < packet_size)
 		fifo_count = mpu.getFIFOCount();
+
+	max_fifo_count = fifo_count;
 
 	while ((fifo_count/packet_size) > 0) {
 		mpu.getFIFOBytes(fifo_buffer, packet_size);
@@ -221,6 +227,35 @@ void loop()
 			motors[3]->set_power(throttle + pids_output_ypr[0] + pids_output_ypr[1] + pids_output_ypr[2]);
 		}
 	}
+
+	#if DEBUG_MODE
+
+	struct timespec time_struct;
+
+	clock_gettime(CLOCK_MONOTONIC, &time_struct);
+
+	cout << time_struct.tv_nsec / 1000000 << "|" << max_fifo_count << "|";
+	for (int i = 0; i < 3; i++)
+		cout << actual_ypr[i] << " ";
+	cout << "|";
+
+	for (int i = 0; i < 3; i++)
+		cout << desired_ypr[i] << " ";
+	cout << "|";
+	cout << throttle << "| \"" << control_string << "\" |";
+
+	#if DEBUG_MODE_WITH_PID
+
+	for (int i = 0; i < 3; i++) {
+		for (int j = 0; j < 3; j++)
+			cout << pid_tunings[i][j] << " ";
+		cout << "|";
+	}
+
+	cout << endl;
+
+	#endif
+	#endif
 }
 
 int main(int argc, char *argv[])
