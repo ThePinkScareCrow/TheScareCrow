@@ -11,6 +11,8 @@
 
 #define DEBUG_PID 0
 
+using namespace std;
+
 struct timespec time_struct;
 
 long int millis()
