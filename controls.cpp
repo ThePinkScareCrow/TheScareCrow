@@ -206,11 +206,14 @@ void loop()
 				continue;/* ignore packet and go to next iteration */
 			}
 			radio.read(control_string, length);
+			if (length < MAX_RADIO_MSG_SIZE)
+				control_string[length] = '\0';
+			else {
+				char *ptr = strchr(control_string, '\n');
+				ptr[0] = '\0';
+			}
 			strncpy(control_string_copy, control_string, MAX_RADIO_MSG_SIZE);
 			parse_and_execute(control_string_copy);
-			/* Empty strings */
-			control_string[0] = '\0';
-			control_string_copy[0] = '\0';
 		}
                 /* TODO: Convert radio_msg into control_string cleanly. Consider strtok() */
 	}
@@ -260,7 +263,8 @@ void loop()
 		printf("%3.3f ", desired_ypr[i]);
 	printf("| ");
 
-	printf("%*d | \"%s\" | ", 3, throttle, control_string);
+	printf("%3.1f | \"%s\" |", throttle, control_string);
+
 
 #if DEBUG_MODE_WITH_PID
 
