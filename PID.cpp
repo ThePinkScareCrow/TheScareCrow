@@ -3,10 +3,11 @@
 
 struct timespec time_struct;
 
-long int millis()
+float time_with_ms()
 {
 	clock_gettime(CLOCK_MONOTONIC, &time_struct);
-	return time_struct.tv_nsec / 1000000;
+	float ms = time_struct.tv_nsec / 1000000;
+	return time_struct.tv_sec + ms / 1000;
 }
 
 float calculate_error(float desired, float actual)
@@ -40,8 +41,8 @@ void PID::clear(void)
 
 PID::PID(float kp_new, float ki_new, float kd_new)
 {
-	sample_time = 5;
-	current_time = millis();
+	sample_time = 0.003;
+	current_time = time_with_ms();
 	last_time = current_time;
 
 	this->clear();
@@ -52,7 +53,7 @@ PID::PID(float kp_new, float ki_new, float kd_new)
 
 bool PID::update(float feedback_value)
 {
-	current_time = millis();
+	current_time = time_with_ms();
         float delta_time = current_time - last_time;
 
         if (delta_time >= sample_time) {
