@@ -13,6 +13,7 @@ class Motor {
 	BlackLib::BlackPWM *motor;
 public:
 	Motor(BlackLib::pwmName pin);
+	~Motor();
 	float get_power();
 	bool set_power(float power);
 };

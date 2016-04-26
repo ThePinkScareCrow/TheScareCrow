@@ -15,6 +15,12 @@ Motor::Motor(BlackLib::pwmName pin)
     this->set_power(0);
 }
 
+Motor::~Motor()
+{
+    this->set_power(0);
+    free(this);
+}
+
 /*
  * Return the power in the range [0, 100].
  */
