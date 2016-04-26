@@ -11,8 +11,6 @@
 #include <stdlib.h>
 #include "BlackLib/BlackPWM.h"
 
-#define MAX_PAYLOAD_SIZE 32
-
 using namespace std;
 
 MPU6050 mpu;
@@ -157,7 +155,6 @@ void loop()
 	static float yaw_target = 0;
 	char control_string[15];
 
-	uint8_t payloadSize = MAX_PAYLOAD_SIZE;
 	uint16_t channels[4];
 	float motor[4];
 
