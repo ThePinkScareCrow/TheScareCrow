@@ -15,7 +15,6 @@ using namespace std;
 
 MPU6050 mpu;
 
-
 uint16_t packet_size;
 uint16_t fifo_count;     /* Count of all bytes currently in FIFO  */
 uint8_t fifo_buffer[64]; /* FIFO storage buffer */
@@ -154,7 +153,6 @@ void loop()
 {
 	static float yaw_target = 0;
 	char control_string[15];
-
 	uint16_t channels[4];
 	float motor[4];
 
@@ -183,7 +181,6 @@ void loop()
 		}
 		fifo_count -= packet_size;
 		cout << endl;
-
 	}
 
 	/* If radio has data, read the damn data */
@@ -227,7 +224,6 @@ void loop()
 			motors[3]->set_power(throttle + pids_output_ypr[0] + pids_output_ypr[1] + pids_output_ypr[2]);
 		}
 	}
-
 }
 
 int main(int argc, char *argv[])
