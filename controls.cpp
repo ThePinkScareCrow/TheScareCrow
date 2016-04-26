@@ -174,14 +174,12 @@ void loop()
 		mpu.dmpGetGravity(&gravity, &q);
 		mpu.dmpGetYawPitchRoll(actual_ypr, &q, &gravity);
 
-		cout << std::time(0) << " " << fifo_count << " ";
-		for (int i = 0; i < 3; i++) {
-			actual_ypr[i] *= 180 / M_PI;
-			cout << actual_ypr[i] << " ";
-		}
 		fifo_count -= packet_size;
-		cout << endl;
 	}
+
+	/*  We need the angles in Cartesian format */
+	for (int i = 0; i < 3; i++)
+		actual_ypr[i] *= 180 / M_PI;
 
 	/* If radio has data, read the damn data */
 	if (radio.available()) {
@@ -191,7 +189,6 @@ void loop()
 				fprintf(stderr, "%s\n", "Corrupt Packet");
 			}
 			radio.read(control_string, length);
-			cout << "radio: " << radio_msg << endl;
 			parse_and_execute(control_string);
 		}
                 /* TODO: Convert radio_msg into control_string cleanly. Consider strtok() */
