@@ -5,7 +5,7 @@
 #include <iostream>
 #include <ctime>
 #include <RF24/RF24.h>
-#include "PID.h"
+#include "PID.hpp"
 #include "motor.hpp"
 #include <string.h>
 #include <stdlib.h>
