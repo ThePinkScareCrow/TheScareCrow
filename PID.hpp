@@ -1,6 +1,5 @@
-#ifndef PID_v1_h
-#define PID_v1_h
-#define LIBRARY_VERSION	1.1.1
+#ifndef PID_hpp
+#define PID_hpp
 
 class PID
 {
@@ -23,14 +22,14 @@ public:
 	float windup_guard;
 	float output;
 
-	PID::clear();
-	PID::PID(float kp_new, float ki_new, float kd_new);
-	bool PID::update(float feedback_value);
-	PID::setKp(float proportional_gain);
-	PID::setKi(float integral_gain);
-	PID::setKd(float derivative_gain);
-	PID::setWindup(float windup);
-	PID::setSampleTime(float sample_time);
+	void clear(void);
+	PID(float kp_new, float ki_new, float kd_new);
+	bool update(float feedback_value);
+	void setKp(float proportional_gain);
+	void setKi(float integral_gain);
+	void setKd(float derivative_gain);
+	void setWindup(float windup);
+	void setSampleTime(float sample_time);
 };
 
 #endif
