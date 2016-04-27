@@ -215,21 +215,21 @@ void loop()
                 /* TODO: Convert radio_msg into control_string cleanly. Consider strtok() */
 	}
 
-        /* Call PID::Compute(). This should be called as often as
-         * possible. It is up to Compute() to decide when to update
-         * the output */
-	bool update_flag = false;
-        for (int i = 0; i < 3; i++) {
-		if (pids_ypr[i]->update())
-			update_flag = true;
-	}
+        if (throttle < 2) {
+		/* Set power to zero regardless of PID output */
+		for (int i = 0; i < 4; i++)
+			motors[i]->set_power(0);
+        } else {
+		bool update_flag = false;
 
-	if (update_flag) {
-		/* Ensure that update_flag is set when throttle is changed */
-		if (throttle < 2) {
-			for (int i = 0; i < 4; i++)
-				motors[i]->set_power(0);
-		} else {
+		for (int i = 0; i < 3; i++) {
+			if (pids_ypr[i]->update())
+				update_flag = true;
+		}
+
+		if (update_flag) {
+			/* Ensure that update_flag is set when throttle is changed */
+
 			/* The output of the PID must be positive in
 			 * the direction of positive rotation
 			 * (right-hand rule. Also given on MPU)
