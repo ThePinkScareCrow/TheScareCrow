@@ -1,4 +1,5 @@
-#include "PID.h"
+#include "PID.hpp"
+#include <time.h>
 
 struct timespec time_struct;
 
@@ -24,7 +25,7 @@ float calculate_error(float desired, float actual)
         return e;
 }
 
-PID::clear()
+void PID::clear(void)
 {
 	set_point = 0.0;
 	p_term = 0.0;
@@ -55,8 +56,7 @@ bool PID::update(float feedback_value)
         float delta_time = current_time - last_time;
 
         if (delta_time >= sample_time) {
-		error = calculate_error(SetPoint, feedback_value);
-
+		float error = calculate_error(set_point, feedback_value);
 		float delta_feedback = calculate_error(last_feedback, feedback_value);
 
 		p_term = Kp * error;
@@ -64,8 +64,8 @@ bool PID::update(float feedback_value)
 
 		if (i_term < -windup_guard)
 			i_term = -windup_guard;
-		else (i_term > windup_guard)
-			     i_term = windup_guard;
+		else if (i_term > windup_guard)
+			i_term = windup_guard;
 
 		d_term = 0.0;
 		if (delta_time > 0)
@@ -75,7 +75,7 @@ bool PID::update(float feedback_value)
 		last_error = error;
 		last_feedback = feedback_value;
 
-		output = PTerm + ITerm - (Kd * DTerm);
+		output = p_term + i_term - (Kd * d_term);
 
                 return true;
 	}
@@ -83,27 +83,27 @@ bool PID::update(float feedback_value)
         return false;
 }
 
-PID::setKp(float proportional_gain)
+void PID::setKp(float proportional_gain)
 {
         Kp = proportional_gain;
 }
 
-PID::setKi(float integral_gain)
+void PID::setKi(float integral_gain)
 {
         Ki = integral_gain;
 }
 
-PID::setKd(float derivative_gain)
+void PID::setKd(float derivative_gain)
 {
         Kd = derivative_gain;
 }
 
-PID::setWindup(float windup)
+void PID::setWindup(float windup)
 {
         windup_guard = windup;
 }
 
-PID::setSampleTime(float sample_time)
+void PID::setSampleTime(float sample_time)
 {
         sample_time = sample_time;
 }
