@@ -666,7 +666,7 @@ uint8_t MPU6050::dmpGetYawPitchRoll(float *data, Quaternion *q, VectorFloat *gra
     // pitch: (nose up/down, about X axis)
     data[1] = atan(gravity -> y / sqrt(gravity -> x*gravity -> x + gravity -> z*gravity -> z));
     // roll: (tilt left/right, about Y axis)
-    data[2] = atan(gravity -> x / sqrt(gravity -> y*gravity -> y + gravity -> z*gravity -> z));
+    data[2] = -atan(gravity -> x / sqrt(gravity -> y*gravity -> y + gravity -> z*gravity -> z));
     return 0;
 }
 
