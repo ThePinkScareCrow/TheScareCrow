@@ -116,7 +116,7 @@ void PID::SetTunings(float Kp, float Ki, float Kd)
 	ki = Ki * SampleTimeInSec;
 	kd = Kd / SampleTimeInSec;
 
-	if (conjtrollerDirection == REVERSE)
+	if (controllerDirection == REVERSE)
 	{
 		kp = (0 - kp);
 		ki = (0 - ki);
