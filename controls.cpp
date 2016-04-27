@@ -14,6 +14,20 @@
 #define DEBUG_MODE 0
 #define DEBUG_MODE_WITH_PID 0
 
+/*MPU Config */
+#define MAX_PACKETS_IN_BUFFER 3
+#define MAX_BUFFER_SIZE 1024
+
+/*Radio Config*/
+#define MAX_RADIO_MSG_SIZE 15
+#define NUM_OF_RADIO_CHANNELS 4
+#define TIME_BEFORE_RESENDING 15
+#define TRIES_BEFORE_QUITTING 15
+#define RADIO_CHANNEL 50
+
+/*Motor Config*/
+#define NUM_OF_MOTORS 4
+
 using namespace std;
 
 MPU6050 mpu;
@@ -135,8 +149,8 @@ void setup()
 
 	radio.begin();
 	radio.setPALevel(RF24_PA_MAX);
-	radio.setChannel(50);
-	radio.setRetries(15,15);
+	radio.setChannel(RADIO_CHANNEL);
+	radio.setRetries(TIME_BEFORE_RESENDING,TRIES_BEFORE_QUITTING);
 	radio.openWritingPipe(pipes[1]);
 	radio.openReadingPipe(1,pipes[0]);
 	radio.startListening();
@@ -155,15 +169,16 @@ void setup()
 void loop()
 {
 	static float yaw_target = 0;
-	char control_string[15];
-	uint16_t channels[4];
-	float motor[4];
+	char control_string[MAX_RADIO_MSG_SIZE] = {0};
+	uint16_t channels[NUM_OF_RADIO_CHANNELS];
+	float motor[NUM_OF_MOTORS];
 	int max_fifo_count = 0;
 
 	fifo_count = mpu.getFIFOCount();
 
-	if ((fifo_count >= packet_size * 3 && fifo_count % packet_size == 0)
-	    || fifo_count == 1024) {
+	if ((fifo_count >= packet_size * MAX_PACKETS_IN_BUFFER
+	     && fifo_count % packet_size == 0)
+	    || fifo_count == MAX_BUFFER_SIZE) {
 		mpu.resetFIFO();
 		printf("FIFO Overflow");
 		fifo_count = mpu.getFIFOCount();
@@ -187,15 +202,21 @@ void loop()
 	for (int i = 0; i < 3; i++)
 		actual_ypr[i] *= 180 / M_PI;
 
-	/* If radio has data, read the damn data */
+	/* Read from radio if data is available */
 	if (radio.available()) {
+		char control_string_copy[MAX_RADIO_MSG_SIZE] = {0};
 		while (radio.available()) {
 			uint8_t length = radio.getPayloadSize();
 			if(length < 1){
 				fprintf(stderr, "%s\n", "Corrupt Packet");
+				continue;/* ignore packet and go to next iteration */
 			}
 			radio.read(control_string, length);
-			parse_and_execute(control_string);
+			strncpy(control_string_copy, control_string, MAX_RADIO_MSG_SIZE);
+			parse_and_execute(control_string_copy);
+			/* Empty strings */
+			control_string[0] = '\0';
+			control_string_copy[0] = '\0';
 		}
                 /* TODO: Convert radio_msg into control_string cleanly. Consider strtok() */
 	}
