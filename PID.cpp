@@ -36,7 +36,9 @@ PID::PID(float* Input, float* Output, float* Setpoint,
 	PID::SetOutputLimits(0, 255);				//default output limit corresponds to
 	//the arduino pwm limits
 
-	SampleTime = 100;							//default Controller Sample Time is 0.1 seconds
+	// Since we run the QC at 200Hz we need a sample time of 5 (0.005s).
+	// Set the sample time to be 4 (5 - 1) just to be on the safer side.
+	SampleTime = 4;							//default Controller Sample Time is 0.1 seconds
 
 	PID::SetControllerDirection(ControllerDirection);
 	PID::SetTunings(Kp, Ki, Kd);
@@ -114,7 +116,7 @@ void PID::SetTunings(float Kp, float Ki, float Kd)
 	ki = Ki * SampleTimeInSec;
 	kd = Kd / SampleTimeInSec;
 
-	if (controllerDirection == REVERSE)
+	if (conjtrollerDirection == REVERSE)
 	{
 		kp = (0 - kp);
 		ki = (0 - ki);
