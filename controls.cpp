@@ -223,7 +223,7 @@ void loop()
 		bool update_flag = false;
 
 		for (int i = 0; i < 3; i++) {
-			if (pids_ypr[i]->update())
+			if (pids_ypr[i]->update(actual_ypr[i]))
 				update_flag = true;
 		}
 
@@ -236,10 +236,10 @@ void loop()
 			 *
 			 * For yaw, motors 0 & 2 move anticlockwise from above.
 			 */
-			motors[0]->set_power(throttle - pids_output_ypr[0] + pids_output_ypr[1] - pids_output_ypr[2]);
-			motors[1]->set_power(throttle + pids_output_ypr[0] - pids_output_ypr[1] - pids_output_ypr[2]);
-			motors[2]->set_power(throttle - pids_output_ypr[0] - pids_output_ypr[1] + pids_output_ypr[2]);
-			motors[3]->set_power(throttle + pids_output_ypr[0] + pids_output_ypr[1] + pids_output_ypr[2]);
+			motors[0]->set_power(throttle - pids_ypr[0]->output + pids_ypr[1]->output - pids_ypr[2]->output);
+			motors[1]->set_power(throttle + pids_ypr[0]->output - pids_ypr[1]->output - pids_ypr[2]->output);
+			motors[2]->set_power(throttle - pids_ypr[0]->output - pids_ypr[1]->output + pids_ypr[2]->output);
+			motors[3]->set_power(throttle + pids_ypr[0]->output + pids_ypr[1]->output + pids_ypr[2]->output);
 		}
 	}
 
