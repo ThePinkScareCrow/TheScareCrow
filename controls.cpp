@@ -249,34 +249,38 @@ void loop()
 		}
 	}
 
-	#if DEBUG_MODE
+#if DEBUG_MODE
 
 	struct timespec time_struct;
 
 	clock_gettime(CLOCK_MONOTONIC, &time_struct);
 
-	cout << time_struct.tv_nsec / 1000000 << "|" << max_fifo_count << "|";
-	for (int i = 0; i < 3; i++)
-		cout << actual_ypr[i] << " ";
-	cout << "|";
+	printf("%*d.%*d | ", 5, time_struct.tv_sec, 3, time_struct.tv_nsec / 1000000);
+	printf("%*d | ", 3, max_fifo_count);
 
 	for (int i = 0; i < 3; i++)
-		cout << desired_ypr[i] << " ";
-	cout << "|";
-	cout << throttle << "| \"" << control_string << "\" |";
+		printf("%3.3f ", actual_ypr[i]);
+	printf("| ");
 
-	#if DEBUG_MODE_WITH_PID
+	for (int i = 0; i < 3; i++)
+		printf("%3.3f ", desired_ypr[i]);
+	printf("| ");
+
+	printf("%*d | \"%s\" | ", 3, throttle, control_string);
+
+#if DEBUG_MODE_WITH_PID
 
 	for (int i = 0; i < 3; i++) {
 		for (int j = 0; j < 3; j++)
-			cout << pid_tunings[i][j] << " ";
-		cout << "|";
+			printf("%1.2f ", 4, pid_tunings[i][j]);
+		printf("| ");
 	}
 
-	cout << endl;
+#endif
 
-	#endif
-	#endif
+	printf("\n");
+
+#endif
 }
 
 int main(int argc, char *argv[])
