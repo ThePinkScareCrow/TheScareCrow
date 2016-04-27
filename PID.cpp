@@ -33,7 +33,7 @@ PID::PID(float* Input, float* Output, float* Setpoint,
 	myInput = Input;
 	mySetpoint = Setpoint;
 
-	PID::SetOutputLimits(0, 255);				//default output limit corresponds to
+	PID::SetOutputLimits(-50, 50);				//default output limit corresponds to
 	//the arduino pwm limits
 
 	// Since we run the QC at 200Hz we need a sample time of 5 (0.005s).
