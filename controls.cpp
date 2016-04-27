@@ -105,23 +105,20 @@ void parse_and_execute(char *control_string)
 			}
 			switch(command[1]) {
 			case 'p':
-				pid_update_index = 0;
+				pid_tunings[ypr_update_index][0] = numeric_value;
+				pids_ypr[ypr_update_index]->setKp(pid_tunings[ypr_update_index][0]);
 				break;
 			case 'i':
-				pid_update_index = 1;
+				pid_tunings[ypr_update_index][1] = numeric_value;
+				pids_ypr[ypr_update_index]->setKp(pid_tunings[ypr_update_index][1]);
 				break;
 			case 'd':
-				pid_update_index = 2;
+				pid_tunings[ypr_update_index][2] = numeric_value;
+				pids_ypr[ypr_update_index]->setKp(pid_tunings[ypr_update_index][2]);
 				break;
-			}
-			if (ypr_update_index != -1
-			    && pid_update_index != -1) {
-				pid_tunings[ypr_update_index][pid_update_index] = numeric_value;
-				pids_ypr[ypr_update_index]->SetTunings(pid_tunings[ypr_update_index][0],
-								       pid_tunings[ypr_update_index][1],
-								       pid_tunings[ypr_update_index][2]);
-			} else
+			default:
 				fprintf(stderr, "Bad input");
+			}
 		}
 	}
 }
@@ -156,11 +153,8 @@ void setup()
 	radio.startListening();
 
         /* Initialize PID controllers */
-        for(int i = 0; i < 3; i++) {
-		pids_ypr[i] = new PID(&actual_ypr[i], &pids_output_ypr[i], &desired_ypr[i],
-				      pid_tunings[i][0], pid_tunings[i][1], pid_tunings[i][2],
-				      DIRECT);
-        }
+        for(int i = 0; i < 3; i++)
+		pids_ypr[i] = new PID(pid_tunings[i][0], pid_tunings[i][1], pid_tunings[i][2]);
 
 	for(int i = 0; i < 4; i++)
 		motors[i] = new Motor(motor_pins[i]);
@@ -226,7 +220,7 @@ void loop()
          * the output */
 	bool update_flag = false;
         for (int i = 0; i < 3; i++) {
-		if (pids_ypr[i]->Compute())
+		if (pids_ypr[i]->update())
 			update_flag = true;
 	}
 
