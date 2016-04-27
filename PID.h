@@ -25,7 +25,7 @@ public:
 
 	PID::clear();
 	PID::PID(float kp_new, float ki_new, float kd_new);
-	float PID::update(float feedback_value);
+	bool PID::update(float feedback_value);
 	PID::setKp(float proportional_gain);
 	PID::setKi(float integral_gain);
 	PID::setKd(float derivative_gain);

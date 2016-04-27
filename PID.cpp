@@ -49,7 +49,7 @@ PID::PID(float kp_new, float ki_new, float kd_new)
 	this->setKd(kd_new);
 }
 
-float PID::update(float feedback_value)
+bool PID::update(float feedback_value)
 {
 	current_time = millis();
         float delta_time = current_time - last_time;
@@ -76,9 +76,11 @@ float PID::update(float feedback_value)
 		last_feedback = feedback_value;
 
 		output = PTerm + ITerm - (Kd * DTerm);
+
+                return true;
 	}
 
-	return output;
+        return false;
 }
 
 PID::setKp(float proportional_gain)
