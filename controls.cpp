@@ -169,8 +169,7 @@ void setup()
 void loop()
 {
 	static float yaw_target = 0;
-	char control_string[MAX_RADIO_MSG_SIZE] = "";
-	char control_string_copy[MAX_RADIO_MSG_SIZE] = "";
+	char control_string[MAX_RADIO_MSG_SIZE] = {0};
 	uint16_t channels[NUM_OF_RADIO_CHANNELS];
 	float motor[NUM_OF_MOTORS];
 	int max_fifo_count = 0;
@@ -203,15 +202,21 @@ void loop()
 	for (int i = 0; i < 3; i++)
 		actual_ypr[i] *= 180 / M_PI;
 
-	/* If radio has data, read the damn data */
+	/* Read from radio if data is available */
 	if (radio.available()) {
+		char control_string_copy[MAX_RADIO_MSG_SIZE] = {0};
 		while (radio.available()) {
 			uint8_t length = radio.getPayloadSize();
 			if(length < 1){
 				fprintf(stderr, "%s\n", "Corrupt Packet");
+				continue;/* ignore packet and go to next iteration */
 			}
 			radio.read(control_string, length);
-			parse_and_execute(control_string);
+			strncpy(control_string_copy, control_string, MAX_RADIO_MSG_SIZE);
+			parse_and_execute(control_string_copy);
+			/* Empty strings */
+			control_string[0] = '\0';
+			control_string_copy[0] = '\0';
 		}
                 /* TODO: Convert radio_msg into control_string cleanly. Consider strtok() */
 	}
