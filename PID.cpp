@@ -1,5 +1,10 @@
 #include "PID.hpp"
 #include <time.h>
+#include <iostream>
+
+using namespace std;
+
+#define DEBUG_PID_OUTPUT 0
 
 struct timespec time_struct;
 
@@ -76,7 +81,15 @@ bool PID::update(float feedback_value)
 		last_error = error;
 		last_feedback = feedback_value;
 
-		output = p_term + i_term - (Kd * d_term);
+		float k_term = - (Kd * d_term);
+
+		output = p_term + i_term + k_term;
+
+#if DEBUG_PID_OUTPUT
+
+		cout << "|" << p_term << " " << i_term << " " << k_term << " " << error << "|" << endl;
+
+#endif
 
                 return true;
 	}
