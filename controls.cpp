@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include "BlackLib/BlackPWM.h"
 
+#define DEBUG_MODE_MOTORS 0
 #define DEBUG_MODE 0
 #define DEBUG_MODE_WITH_PID 0
 
@@ -239,10 +240,21 @@ void loop()
 			 *
 			 * For yaw, motors 0 & 2 move anticlockwise from above.
 			 */
-			motors[0]->set_power(throttle - pids_ypr[0]->output + pids_ypr[1]->output - pids_ypr[2]->output);
-			motors[1]->set_power(throttle + pids_ypr[0]->output - pids_ypr[1]->output - pids_ypr[2]->output);
-			motors[2]->set_power(throttle - pids_ypr[0]->output - pids_ypr[1]->output + pids_ypr[2]->output);
-			motors[3]->set_power(throttle + pids_ypr[0]->output + pids_ypr[1]->output + pids_ypr[2]->output);
+			float m0, m1, m2, m3;
+
+			m0 = throttle - pids_ypr[0]->output + pids_ypr[1]->output - pids_ypr[2]->output;
+			m1 = throttle + pids_ypr[0]->output - pids_ypr[1]->output - pids_ypr[2]->output;
+			m2 = throttle - pids_ypr[0]->output - pids_ypr[1]->output + pids_ypr[2]->output;
+			m3 = throttle + pids_ypr[0]->output + pids_ypr[1]->output + pids_ypr[2]->output;
+
+			motors[0]->set_power(m0);
+			motors[1]->set_power(m1);
+			motors[2]->set_power(m2);
+			motors[3]->set_power(m3);
+
+#if DEBUG_MODE_MOTORS
+			cout << m0 << " " << m1 << " " << m2 << " " << m3 << " |";
+#endif
 		}
 	}
 
