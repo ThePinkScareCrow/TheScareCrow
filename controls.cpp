@@ -77,7 +77,12 @@ void parse_and_execute(char *control_string)
 	command = strtok(control_string, " ");
 	value = strtok(NULL, " ");
 	if (command && value) {
-		numeric_value = strtof(value, NULL);
+		char *endptr;
+		numeric_value = strtof(value, &endptr);
+		if (value == endptr) {
+			fprintf(stderr, "Radio: Improper value received %s\n", value);
+			return;
+		}
 		if (command[0] == 't')
 			throttle = numeric_value;
 		else if (!strcmp(command, "y"))
