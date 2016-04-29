@@ -261,18 +261,16 @@ void loop()
 
 	clock_gettime(CLOCK_MONOTONIC, &time_struct);
 
-	printf("%*d.%*d | ", 5, time_struct.tv_sec, 3, time_struct.tv_nsec / 1000000);
-	printf("%*d | ", 3, max_fifo_count);
+	printf("%d.%d | ", time_struct.tv_sec, time_struct.tv_nsec / 1000000);
+	printf("%d | ", max_fifo_count);
 
 	for (int i = 0; i < 3; i++)
 		printf("%3.3f ", actual_ypr[i]);
-	printf("| ");
 
 	for (int i = 0; i < 3; i++)
 		printf("%3.3f ", desired_ypr[i]);
-	printf("| ");
 
-	printf("%3.1f | \"%s\" |", throttle, control_string);
+	printf("%3.1f \"%s\" ", throttle, control_string);
 
 
 #if DEBUG_MODE_WITH_PID
@@ -280,7 +278,6 @@ void loop()
 	for (int i = 0; i < 3; i++) {
 		for (int j = 0; j < 3; j++)
 			printf("%1.2f ", 4, pid_tunings[i][j]);
-		printf("| ");
 	}
 
 #endif

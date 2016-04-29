@@ -87,7 +87,7 @@ bool PID::update(float feedback_value)
 
 #if DEBUG_PID_OUTPUT
 
-		cout << "|" << p_term << " " << i_term << " " << k_term << " " << error << "|" << endl;
+		cout << p_term << " " << i_term << " " << k_term << " " << error;
 
 #endif
 
