@@ -6,14 +6,7 @@ using namespace std;
 
 #define DEBUG_PID_OUTPUT 0
 
-struct timespec time_struct;
-
-float time_with_ms()
-{
-	clock_gettime(CLOCK_MONOTONIC, &time_struct);
-	float ms = time_struct.tv_nsec / 1000000;
-	return time_struct.tv_sec + ms / 1000;
-}
+std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 
 float calculate_error(float desired, float actual)
 {
@@ -46,8 +39,10 @@ void PID::clear(void)
 
 PID::PID(float kp_new, float ki_new, float kd_new)
 {
+	std::chrono::steady_clock::time_point end= std::chrono::steady_clock::now();
+
 	sample_time = 0.003;
-	current_time = time_with_ms();
+	current_time = std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count()
 	last_time = current_time;
 
 	this->clear();
@@ -58,7 +53,9 @@ PID::PID(float kp_new, float ki_new, float kd_new)
 
 bool PID::update(float feedback_value)
 {
-	current_time = time_with_ms();
+	std::chrono::steady_clock::time_point end= std::chrono::steady_clock::now();
+
+	current_time = std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count()
         float delta_time = current_time - last_time;
 
         if (delta_time >= sample_time) {

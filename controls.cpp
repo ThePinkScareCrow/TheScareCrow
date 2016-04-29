@@ -64,6 +64,8 @@ const enum BlackLib::pwmName motor_pins[4] = {
 	BlackLib::EHRPWM2B
 };
 
+std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+
 /* Parse a control string and execute the command */
 void parse_and_execute(char *control_string)
 {
@@ -257,11 +259,9 @@ void loop()
 
 #if DEBUG_MODE
 
-	struct timespec time_struct;
+	std::chrono::steady_clock::time_point end= std::chrono::steady_clock::now();
 
-	clock_gettime(CLOCK_MONOTONIC, &time_struct);
-
-	printf("%d.%d | ", time_struct.tv_sec, time_struct.tv_nsec / 1000000);
+	printf("%f", std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count());
 	printf("%d | ", max_fifo_count);
 
 	for (int i = 0; i < 3; i++)
