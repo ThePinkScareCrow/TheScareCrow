@@ -181,7 +181,7 @@ void loop()
 	     && fifo_count % packet_size == 0)
 	    || fifo_count == MAX_BUFFER_SIZE) {
 		mpu.resetFIFO();
-		printf("FIFO Overflow");
+		printf("FIFO Overflow\n");
 		fifo_count = mpu.getFIFOCount();
 	}
 
