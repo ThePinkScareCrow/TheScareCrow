@@ -151,6 +151,7 @@ void setup()
 	radio.setRetries(TIME_BEFORE_RESENDING,TRIES_BEFORE_QUITTING);
 	radio.openWritingPipe(pipes[1]);
 	radio.openReadingPipe(1,pipes[0]);
+	radio.enableDynamicPayloads();
 	radio.startListening();
 
         /* Initialize PID controllers */
@@ -201,19 +202,10 @@ void loop()
 	if (radio.available()) {
 		char control_string_copy[MAX_RADIO_MSG_SIZE] = {0};
 		while (radio.available()) {
-			uint8_t length = radio.getPayloadSize();
-			if(length < 1){
-				fprintf(stderr, "%s\n", "Corrupt Packet");
-				continue;/* ignore packet and go to next iteration */
-			}
+			int length = radio.getDynamicPayloadSize();
+			length = MAX_RADIO_MSG_SIZE < length ? MAX_RADIO_MSG_SIZE : length;
 			radio.read(control_string, length);
-			if (length < MAX_RADIO_MSG_SIZE)
-				control_string[length] = '\0';
-			else {
-				char *ptr = strchr(control_string, '\n');
-				ptr[0] = '\0';
-			}
-			strncpy(control_string_copy, control_string, MAX_RADIO_MSG_SIZE);
+			strncpy(control_string_copy, control_string, length);
 			parse_and_execute(control_string_copy);
 		}
                 /* TODO: Convert radio_msg into control_string cleanly. Consider strtok() */
