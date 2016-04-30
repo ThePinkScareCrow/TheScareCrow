@@ -117,11 +117,11 @@ void parse_and_execute(char *control_string)
 				break;
 			case 'i':
 				pid_tunings[ypr_update_index][1] = numeric_value;
-				pids_ypr[ypr_update_index]->setKp(pid_tunings[ypr_update_index][1]);
+				pids_ypr[ypr_update_index]->setKi(pid_tunings[ypr_update_index][1]);
 				break;
 			case 'd':
 				pid_tunings[ypr_update_index][2] = numeric_value;
-				pids_ypr[ypr_update_index]->setKp(pid_tunings[ypr_update_index][2]);
+				pids_ypr[ypr_update_index]->setKd(pid_tunings[ypr_update_index][2]);
 				break;
 			default:
 				fprintf(stderr, "Bad input");
