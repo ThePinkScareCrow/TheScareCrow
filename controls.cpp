@@ -10,6 +10,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "BlackLib/BlackPWM.h"
+#include <unistd.h>
 
 #define DEBUG_MODE_MOTORS 0
 #define DEBUG_MODE 0
@@ -163,8 +164,14 @@ void setup()
         for(int i = 0; i < 3; i++)
 		pids_ypr[i] = new PID(pid_tunings[i][0], pid_tunings[i][1], pid_tunings[i][2]);
 
+	/* Initialize Motors */
 	for(int i = 0; i < 4; i++)
 		motors[i] = new Motor(motor_pins[i]);
+
+	/* Calibrate ESCs */
+	cout << "Plug in battery now." << endl;
+	sleep(5);
+	cout << "Done calibrating motors." << endl;
 }
 
 void loop()

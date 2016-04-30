@@ -12,7 +12,6 @@ Motor::Motor(BlackLib::pwmName pin)
 	 */
 	motor->setDutyPercent(100);
 	motor->setPeriodTime(PWM_PERIOD_MS, BlackLib::milisecond);
-	this->set_power(0);
 }
 
 Motor::~Motor()
