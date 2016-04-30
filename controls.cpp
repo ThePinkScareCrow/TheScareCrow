@@ -1,56 +1,44 @@
-#include "MPU6050_6Axis_MotionApps20.h"
-#include <stdint.h>
+#include <math.h>
+#include <vector>
+#include <string.h>
+#include <stdio.h>
+#include <iostream>
+#include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <iostream>
-#include <ctime>
-#include <RF24/RF24.h>
-#include "PID.hpp"
+#include <fcntl.h>
+#include <termios.h>
+#include <errno.h>
+#include <time.h>
+#include <pthread.h>
+#include <stdint.h>
 #include "motor.hpp"
-#include <string.h>
-#include <stdlib.h>
 #include "BlackLib/BlackPWM.h"
-
-#define DEBUG_MODE_MOTORS 0
-#define DEBUG_MODE 0
-#define DEBUG_MODE_WITH_PID 0
-
-/*MPU Config */
-#define MAX_PACKETS_IN_BUFFER 3
-#define MAX_BUFFER_SIZE 1024
-
-/*Radio Config*/
-#define MAX_RADIO_MSG_SIZE 15
-#define NUM_OF_RADIO_CHANNELS 4
-#define TIME_BEFORE_RESENDING 15
-#define TRIES_BEFORE_QUITTING 15
-#define RADIO_CHANNEL 50
-
-/*Motor Config*/
-#define NUM_OF_MOTORS 4
+#include <RF24/RF24.h>
 
 using namespace std;
 
+#include "MPU6050_6Axis_MotionApps20.h"
+#include "PID.h"
+
 MPU6050 mpu;
 
-uint16_t packet_size;
-uint16_t fifo_count;     /* Count of all bytes currently in FIFO  */
-uint8_t fifo_buffer[64]; /* FIFO storage buffer */
-
-Quaternion q;           /* [w, x, y, z]         quaternion container */
-VectorFloat gravity;    /* [x, y, z]            gravity vector */
-float actual_ypr[3];    /* [yaw, pitch, roll]   yaw/pitch/roll container and gravity vector */
-
-PID *pids_ypr[3];
-float desired_ypr[3] = {0, 0, 0};
-float pids_output_ypr[3];
-float pid_tunings[3][3] = {
-	{0, 0, 0},
-	{0, 0, 0},
-	{0, 0, 0}
-};
-
-float throttle = 0;
+bool dmpReady = false;  // set true if DMP init was successful
+uint8_t mpuIntStatus;   // holds actual interrupt status byte from MPU
+uint8_t devStatus;      // return status after each device operation (0 = success, !0 = error)
+uint16_t packetSize;    // expected DMP packet size (default is 42 bytes)
+uint16_t fifoCount;     // count of all bytes currently in FIFO
+uint8_t fifoBuffer[64]; // FIFO storage buffer
+int16_t g[3];
+float gyro[3];
+// orientation/motion vars
+Quaternion q;           // [w, x, y, z]         quaternion container
+VectorInt16 aa;         // [x, y, z]            accel sensor measurements
+VectorInt16 aaReal;     // [x, y, z]            gravity-free accel sensor measurements
+VectorInt16 aaWorld;    // [x, y, z]            world-frame accel sensor measurements
+VectorFloat gravity;    // [x, y, z]            gravity vector
+float euler[3];         // [psi, theta, phi]    Euler angle container
+float ypr[3];           // [yaw, pitch, roll]   yaw/pitch/roll container and gravity vector
 
 RF24 radio(49, 0);
 const uint8_t pipes[][6] = {"1Node","2Node"};
@@ -64,7 +52,36 @@ const enum BlackLib::pwmName motor_pins[4] = {
 	BlackLib::EHRPWM2B
 };
 
-std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+// Arduino map function
+long map(long x, long in_min, long in_max, long out_min, long out_max)
+{
+	return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+}
+
+#define wrap_180(x) (x < -180 ? x+360 : (x > 180 ? x - 360: x))
+#define ToDeg(x) ((x)*57.2957795131) // *180/pi
+#define constrain(amt,low,high) ((amt)<(low)?(low):((amt)>(high)?(high):(amt)))
+
+// PID array (6 pids, two for each axis)
+PID pids[6];
+#define PID_PITCH_RATE 0
+#define PID_ROLL_RATE 1
+#define PID_PITCH_STAB 2
+#define PID_ROLL_STAB 3
+#define PID_YAW_RATE 4
+#define PID_YAW_STAB 5
+
+float pid_tunings[6][3] = {
+	{0.5, 0.003, 0.09},
+	{0.5, 0.003, 0.09},
+	{6.5, 0.1, 1.2},
+	{6.5, 0.1, 1.2},
+	{0, 0, 0},
+	{0, 0, 0}
+};
+
+float throttle = 0;
+float desired_ypr[3] = {0, 0, 0};
 
 /* Parse a control string and execute the command */
 void parse_and_execute(char *control_string)
@@ -102,54 +119,81 @@ void parse_and_execute(char *control_string)
 			 */
 			switch(command[0]) {
 			case 'y':
-				ypr_update_index = 0;
+				if (command[1] == 'r')
+					ypr_update_index = PID_YAW_RATE;
+				else
+					ypr_update_index = PID_YAW_STAB;
 				break;
 			case 'p':
-				ypr_update_index = 1;
+				if (command[1] == 'r')
+					ypr_update_index = PID_PITCH_RATE;
+				else
+					ypr_update_index = PID_PITCH_STAB;
 				break;
 			case 'r':
-				ypr_update_index = 2;
+				if (command[1] == 'r')
+					ypr_update_index = PID_ROLL_RATE;
+				else
+					ypr_update_index = PID_ROLL_STAB;
 				break;
 			}
-			switch(command[1]) {
+			switch(command[2]) {
 			case 'p':
 				pid_tunings[ypr_update_index][0] = numeric_value;
-				pids_ypr[ypr_update_index]->setKp(pid_tunings[ypr_update_index][0]);
 				break;
 			case 'i':
 				pid_tunings[ypr_update_index][1] = numeric_value;
-				pids_ypr[ypr_update_index]->setKp(pid_tunings[ypr_update_index][1]);
 				break;
 			case 'd':
 				pid_tunings[ypr_update_index][2] = numeric_value;
-				pids_ypr[ypr_update_index]->setKp(pid_tunings[ypr_update_index][2]);
 				break;
 			default:
 				fprintf(stderr, "Bad input");
 			}
+			pids[ypr_update_index]->setKp(pid_tunings[ypr_update_index][0],
+						      pid_tunings[ypr_update_index][1],
+						      pid_tunings[ypr_update_index][2]);
 		}
 	}
 }
 
 void setup()
 {
-	uint8_t dev_status;
 
+	pids[PID_PITCH_RATE].set_Kpid(pid_tunings[PID_PITCH_RATE][0],
+				      pid_tunings[PID_PITCH_RATE][1],
+				      pid_tunings[PID_PITCH_RATE][2]);
+	pids[PID_ROLL_RATE].set_Kpid(pid_tunings[PID_ROLL_RATE][0],
+				     pid_tunings[PID_ROLL_RATE][1],
+				     pid_tunings[PID_ROLL_RATE][2]);
+	pids[PID_PITCH_STAB].set_Kpid(pid_tunings[PID_PITCH_STAB][0],
+				      pid_tunings[PID_PITCH_STAB][1],
+				      pid_tunings[PID_PITCH_STAB][2]);
+	pids[PID_ROLL_STAB].set_Kpid(pid_tunings[PID_ROLL_STAB][0],
+				     pid_tunings[PID_ROLL_STAB][1],
+				     pid_tunings[PID_ROLL_STAB][2]);
+
+	// initialize device
+	printf("Initializing I2C devices...\n");
 	mpu.initialize();
-	printf(mpu.testConnection() ?
-	       "MPU6050 connection successful\n" :
-	       "MPU6050 connection failed\n");
-	printf("Initializing DMP...\n");
-	dev_status = mpu.dmpInitialize();
 
-	if (dev_status == 0) {
+	// verify connection
+	printf("Testing device connections...\n");
+	printf(mpu.testConnection() ? "MPU6050 connection successful\n" : "MPU6050 connection failed\n");
+
+	// load and configure the DMP
+	printf("Initializing DMP...\n");
+	devStatus = mpu.dmpInitialize();
+
+	if (devStatus == 0) {
 		printf("Enabling DMP...\n");
 		mpu.setDMPEnabled(true);
+		mpuIntStatus = mpu.getIntStatus();
 		printf("DMP ready!\n");
-		packet_size = mpu.dmpGetFIFOPacketSize();
+		dmpReady = true;
+		packetSize = mpu.dmpGetFIFOPacketSize();
 	} else {
-		printf("DMP Initialization failed (code %d)\n", dev_status);
-		exit(0);
+		printf("DMP Initialization failed (code %d)\n", devStatus);
 	}
 
 	radio.begin();
@@ -161,138 +205,103 @@ void setup()
 	radio.enableDynamicPayloads();
 	radio.startListening();
 
-        /* Initialize PID controllers */
-        for(int i = 0; i < 3; i++)
-		pids_ypr[i] = new PID(pid_tunings[i][0], pid_tunings[i][1], pid_tunings[i][2]);
-
 	for(int i = 0; i < 4; i++)
 		motors[i] = new Motor(motor_pins[i]);
 }
 
-void loop()
+void loop ()
 {
+
+	long yaw, pitch, roll, gyroYaw, gyroPitch, gyroRoll;
 	static float yaw_target = 0;
-	char control_string[MAX_RADIO_MSG_SIZE] = {0};
-	uint16_t channels[NUM_OF_RADIO_CHANNELS];
-	float motor[NUM_OF_MOTORS];
-	int max_fifo_count = 0;
 
-	fifo_count = mpu.getFIFOCount();
 
-	if ((fifo_count >= packet_size * MAX_PACKETS_IN_BUFFER
-	     && fifo_count % packet_size == 0)
-	    || fifo_count == MAX_BUFFER_SIZE) {
+	if (!dmpReady)
+		return;
+
+	do {
+		fifoCount = mpu.getFIFOCount();
+	} while (fifoCount < 42);
+
+	if (fifoCount == 1024) {
 		mpu.resetFIFO();
-		printf("FIFO Overflow\n");
-		fifo_count = mpu.getFIFOCount();
-	}
-
-	while (fifo_count < packet_size)
-		fifo_count = mpu.getFIFOCount();
-
-	max_fifo_count = fifo_count;
-
-	while ((fifo_count/packet_size) > 0) {
-		mpu.getFIFOBytes(fifo_buffer, packet_size);
-		mpu.dmpGetQuaternion(&q, fifo_buffer);
+		printf("FIFO overflow!\n");
+	} else  {
+		mpu.getFIFOBytes(fifoBuffer, packetSize);
+		mpu.dmpGetQuaternion(&q, fifoBuffer);
 		mpu.dmpGetGravity(&gravity, &q);
-		mpu.dmpGetYawPitchRoll(actual_ypr, &q, &gravity);
+		mpu.dmpGetYawPitchRoll(ypr, &q, &gravity);
 
-		fifo_count -= packet_size;
-	}
-
-	/*  We need the angles in Cartesian format */
-	for (int i = 0; i < 3; i++)
-		actual_ypr[i] *= 180 / M_PI;
-
-	/* Read from radio if data is available */
-	if (radio.available()) {
-		char control_string_copy[MAX_RADIO_MSG_SIZE] = {0};
-		while (radio.available()) {
-			int length = radio.getDynamicPayloadSize();
-			length = MAX_RADIO_MSG_SIZE < length ? MAX_RADIO_MSG_SIZE : length;
-			radio.read(control_string, length);
-			strncpy(control_string_copy, control_string, length);
-			parse_and_execute(control_string_copy);
+		for (int i = 0; i < 3; i++){
+			ypr[i] *= 180 / M_PI;
 		}
-                /* TODO: Convert radio_msg into control_string cleanly. Consider strtok() */
+
+		yaw = ypr[0];
+		pitch = ypr[1];
+		roll = ypr[2];
+
+		mpu.dmpGetGyro(g, fifoBuffer);
+
+		//0=gyroX, 1=gyroY, 2=gyroZ
+		//swapped to match Yaw,Pitch,Roll
+		//Scaled from deg/s to get tr/s
+		for (int i = 0; i < 3; i++) {
+			gyro[i] = ToDeg(g[3-i-1]);
+		}
+		gyroYaw =- gyro[0];
+		gyroPitch =- gyro[1];
+		gyroRoll = gyro[2];
 	}
 
-        if (throttle < 2) {
-		/* Set power to zero regardless of PID output */
+	if(throttle > 2) {  // Throttle raised, turn on stablisation.
+		// Stablise PIDS
+		float pitch_stab_output = constrain(pids[PID_PITCH_STAB].update_pid_std((float)desired_ypr[1], pitch, 1), -250, 250);
+		float roll_stab_output = constrain(pids[PID_ROLL_STAB].update_pid_std((float)desired_ypr[2], roll, 1), -250, 250);
+		float yaw_stab_output = constrain(pids[PID_YAW_STAB].update_pid_std(wrap_180(yaw_target), wrap_180(desired_ypr[0]), 1), -360, 360);
+
+		// is pilot asking for yaw change - if so feed directly to rate pid (overwriting yaw stab output)
+		if(abs(desired_ypr[0]) > 5) {
+			yaw_stab_output = desired_ypr[0];
+			yaw_target = yaw;   // remember this yaw for when pilot stops
+		}
+
+		// rate PIDS
+		long pitch_output =  (long) constrain(pids[PID_PITCH_RATE].update_pid_std(pitch_stab_output, gyroPitch, 1), - 500, 500);
+		long roll_output =  (long) constrain(pids[PID_ROLL_RATE].update_pid_std(roll_stab_output, gyroRoll, 1), -500, 500);
+		long yaw_output =  (long) constrain(pids[PID_YAW_RATE].update_pid_std(yaw_stab_output, gyroYaw, 1), -500, 500);
+
+		float m0, m1, m2, m3;
+
+		m0 = throttle - pids_ypr[0]->output + pids_ypr[1]->output - pids_ypr[2]->output;
+		m1 = throttle + pids_ypr[0]->output - pids_ypr[1]->output - pids_ypr[2]->output;
+		m2 = throttle - pids_ypr[0]->output - pids_ypr[1]->output + pids_ypr[2]->output;
+		m3 = throttle + pids_ypr[0]->output + pids_ypr[1]->output + pids_ypr[2]->output;
+
+		motors[0]->set_power(m0);
+		motors[1]->set_power(m1);
+		motors[2]->set_power(m2);
+		motors[3]->set_power(m3);
+
+	} else {
+		// motors off
+
 		for (int i = 0; i < 4; i++)
 			motors[i]->set_power(0);
-        } else {
-		bool update_flag = false;
 
-		for (int i = 0; i < 3; i++) {
-			if (pids_ypr[i]->update(actual_ypr[i]))
-				update_flag = true;
-		}
-
-		if (update_flag) {
-			/* Ensure that update_flag is set when throttle is changed */
-
-			/* The output of the PID must be positive in
-			 * the direction of positive rotation
-			 * (right-hand rule. Also given on MPU)
-			 *
-			 * For yaw, motors 0 & 2 move anticlockwise from above.
-			 */
-			float m0, m1, m2, m3;
-
-			m0 = throttle - pids_ypr[0]->output + pids_ypr[1]->output - pids_ypr[2]->output;
-			m1 = throttle + pids_ypr[0]->output - pids_ypr[1]->output - pids_ypr[2]->output;
-			m2 = throttle - pids_ypr[0]->output - pids_ypr[1]->output + pids_ypr[2]->output;
-			m3 = throttle + pids_ypr[0]->output + pids_ypr[1]->output + pids_ypr[2]->output;
-
-			motors[0]->set_power(m0);
-			motors[1]->set_power(m1);
-			motors[2]->set_power(m2);
-			motors[3]->set_power(m3);
-
-#if DEBUG_MODE_MOTORS
-			cout << m0 << " " << m1 << " " << m2 << " " << m3 << " |";
-#endif
-		}
+		// reset yaw target so we maintain this on takeoff
+		yaw_target = yaw;
 	}
-
-#if DEBUG_MODE
-
-	std::chrono::steady_clock::time_point end= std::chrono::steady_clock::now();
-
-	printf("%f", std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count());
-	printf("%d | ", max_fifo_count);
-
-	for (int i = 0; i < 3; i++)
-		printf("%3.3f ", actual_ypr[i]);
-
-	for (int i = 0; i < 3; i++)
-		printf("%3.3f ", desired_ypr[i]);
-
-	printf("%3.1f \"%s\" ", throttle, control_string);
-
-
-#if DEBUG_MODE_WITH_PID
-
-	for (int i = 0; i < 3; i++) {
-		for (int j = 0; j < 3; j++)
-			printf("%1.2f ", 4, pid_tunings[i][j]);
-	}
-
-#endif
-
-	printf("\n");
-
-#endif
 }
 
-int main(int argc, char *argv[])
+
+int main(int argc, char ** args)
 {
 	setup();
 
-	while (1) {
+	while(1)
+	{
 		loop();
+		usleep(1);
 	}
 	return 0;
 }

@@ -1,120 +1,123 @@
+/*
+  PID Controller
+  author : vincent JAUNET
+  mail : vincent.jaunet@hotmail.fr
+  date : 10-01-2013
+  Description:
+  the PID class is a collection of routine necessary
+  to perform a PID control based on setpoints (remote control),
+  inputs (measured attitude).
+  Can be used for any type of system and features :
+  - Derivative on measurement
+  - Windsup of integral errors
+  Copyright (c) <2014> <Vincent Jaunet>
+  Permission is hereby granted, free of charge, to any person obtaining a copy
+  of this software and associated documentation files (the "Software"), to deal
+  in the Software without restriction, including without limitation the rights
+  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+  copies of the Software, and to permit persons to whom the Software is
+  furnished to do so, subject to the following conditions:
+  The above copyright notice and this permission notice shall be included in
+  all copies or substantial portions of the Software.
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+  THE SOFTWARE.
+*/
+
 #include "PID.hpp"
-#include <time.h>
-#include <iostream>
 
-using namespace std;
+PID yprSTAB[3];
+PID yprRATE[3];
 
-#define DEBUG_PID_OUTPUT 0
-
-std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
-
-float calculate_error(float desired, float actual)
+//default constructo
+PID::PID()
 {
-        float e = desired - actual;
-	float abs_e;
+	//PID constants
+	m_Kd = 0;
+	m_Ki = 0;
+	m_Kp = 0;
 
-	if (e < 0)
-		abs_e = -e;
-        if (360 - abs_e < abs_e) {
-		if (e > 0)
-			e = - (360 - e);
-		else
-			e = 360 + e;
-	}
-        return e;
+	//PID variables
+	m_err = 0;
+	m_sum_err = 0;
+	m_ddt_err = 0;
+	m_lastInput= 0;
+	m_outmax =  200;
+	m_outmin = -200;
 }
 
-void PID::clear(void)
+PID::PID(float kp_,float ki_,float kd_)
 {
-	set_point = 0.0;
-	p_term = 0.0;
-	i_term = 0.0;
-	d_term = 0.0;
-	last_error = 0.0;
-	last_feedback = 0.0;
-	int_error = 0.0;
-	windup_guard = 5.0;
-	output = 0.0;
+	//PID constants
+	m_Kd = kp_;
+	m_Ki = ki_;
+	m_Kp = kd_;
+
+	//PID variables
+	m_err = 0;
+	m_sum_err = 0;
+	m_ddt_err = 0;
+	m_lastInput= 0;
+	m_outmax =  400;
+	m_outmin = -400;
 }
 
-PID::PID(float kp_new, float ki_new, float kd_new)
+float PID::update_pid_std(float setpoint, float input, float dt)
 {
-	std::chrono::steady_clock::time_point end= std::chrono::steady_clock::now();
 
-	sample_time = 0.003;
-	current_time = std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count()
-	last_time = current_time;
+	//Computes error
+	m_err = setpoint-input;
 
-	this->clear();
-	this->setKp(kp_new);
-	this->setKi(ki_new);
-	this->setKd(kd_new);
-}
+	//Integrating errors
+	m_sum_err += m_err * m_Ki * dt;
 
-bool PID::update(float feedback_value)
-{
-	std::chrono::steady_clock::time_point end= std::chrono::steady_clock::now();
+	//calculating error derivative
+	//Input derivative is used to avoid derivative kick
+	m_ddt_err = -m_Kd / dt * (input - m_lastInput);
 
-	current_time = std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count()
-        float delta_time = current_time - last_time;
-
-        if (delta_time >= sample_time) {
-		float error = calculate_error(set_point, feedback_value);
-		float delta_feedback = calculate_error(last_feedback, feedback_value);
-
-		p_term = Kp * error;
-		i_term += Ki * error * delta_time;
-
-		if (i_term < -windup_guard)
-			i_term = -windup_guard;
-		else if (i_term > windup_guard)
-			i_term = windup_guard;
-
-		d_term = 0.0;
-		if (delta_time > 0)
-			d_term = delta_feedback / delta_time;
-
-		last_time = current_time;
-		last_error = error;
-		last_feedback = feedback_value;
-
-		float k_term = - (Kd * d_term);
-
-		output = p_term + i_term + k_term;
-
-#if DEBUG_PID_OUTPUT
-
-		cout << p_term << " " << i_term << " " << k_term << " " << error;
-
-#endif
-
-                return true;
+	//Calculation of the output
+	//winds up boundaries
+	m_output = m_Kp*m_err + m_sum_err + m_ddt_err;
+	if (m_output > m_outmax) {
+		//winds up boundaries
+		m_sum_err  = 0.0;
+		m_output   = m_outmax;
+	}else if (m_output < m_outmin) {
+		//winds up boundaries
+		m_sum_err  = 0.0;
+		m_output   = m_outmin;
 	}
 
-        return false;
+	m_lastInput= input;
+
+	//printf("kp %f ki %f kd %f\n", m_Kp, m_Ki, m_Kd);
+	//printf("setpt %7.2f input   %7.2f output   %f\n", setpoint, input, m_output);
+	//printf("err   %7.2f ddt_err %7.2f sum_err  %7.2f\n", m_err, m_ddt_err, m_sum_err);
+
+	return m_output;
 }
 
-void PID::setKp(float proportional_gain)
+void PID::reset()
 {
-        Kp = proportional_gain;
+	m_sum_err   = 0;
+	m_ddt_err   = 0;
+	m_lastInput = 0;
 }
 
-void PID::setKi(float integral_gain)
+void PID::set_Kpid(float Kp,float Ki, float Kd)
 {
-        Ki = integral_gain;
+	m_Kp = Kp;
+	m_Ki = Ki;
+	m_Kd = Kd;
+
 }
 
-void PID::setKd(float derivative_gain)
+void PID::set_windup_bounds(float Min,float Max)
 {
-        Kd = derivative_gain;
-}
-
-void PID::setWindup(float windup)
-{
-        windup_guard = windup;
-}
-
-void PID::setSampleTime(float sample_time)
-{
-        sample_time = sample_time;
+	m_outmax = Max;
+	m_outmin = Min;
 }

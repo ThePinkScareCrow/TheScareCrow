@@ -1,35 +1,39 @@
-#ifndef PID_hpp
-#define PID_hpp
+#ifndef pid
+#define pid
 
-class PID
-{
+#include <iostream>
+#include <stdlib.h>
+#include <fstream>
+
+class PID {
+
+private:
+	//PID constants
+	float m_Kp;
+	float m_Ki;
+	float m_Kd;
+
+	//PID constants
+	float m_err;
+	float m_sum_err;
+	float m_ddt_err;
+	float m_lastInput;
+	float m_outmax;
+	float m_outmin;
+	float m_output;
+
 public:
-	float Kp;
-	float Ki;
-	float Kd;
-
-	float sample_time;
-	float current_time;
-	float last_time;
-
-	float set_point;
-	float p_term;
-	float i_term;
-	float d_term;
-	float last_error;
-	float last_feedback;
-	float int_error;
-	float windup_guard;
-	float output;
-
-	void clear(void);
-	PID(float kp_new, float ki_new, float kd_new);
-	bool update(float feedback_value);
-	void setKp(float proportional_gain);
-	void setKi(float integral_gain);
-	void setKd(float derivative_gain);
-	void setWindup(float windup);
-	void setSampleTime(float sample_time);
+	PID();
+	PID(float,float,float);
+	float update_pid_std(float setpt, float input, float dt);
+	void  set_Kpid(float, float, float);
+	void  set_windup_bounds(float, float);
+	void  reset();
+	float setpoint;
 };
 
+
+extern PID pids[6];
+
 #endif
+
