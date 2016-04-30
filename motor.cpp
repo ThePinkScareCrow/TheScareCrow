@@ -11,7 +11,7 @@ Motor::Motor(BlackLib::pwmName pin)
      * setDutyPercent(100)
      */
     motor->setDutyPercent(100);
-    motor->setPeriodTime(20, BlackLib::milisecond);
+    motor->setPeriodTime(PWM_PERIOD, BlackLib::milisecond);
     this->set_power(0);
 }
 
@@ -26,8 +26,8 @@ Motor::~Motor()
  */
 float Motor::get_power()
 {
-    return (motor->getNumericValue() - MIN_POWER_DUTY_PERC) *	\
-        (MAX_POWER_DUTY_PERC - MIN_POWER_DUTY_PERC);
+    return (motor->getNumericValue() - MIN_POWER_DUTY_PERC)
+        * MAX_MAPPED_DUTY / (MAX_POWER_DUTY_PERC - MIN_POWER_DUTY_PERC);
 }
 
 /*
@@ -35,7 +35,10 @@ float Motor::get_power()
  */
 bool Motor::set_power(float power)
 {
-    return motor->setDutyPercent(power / (MAX_POWER_DUTY_PERC    \
-                                          - MIN_POWER_DUTY_PERC) \
+    if (power < 0 || power > 100)
+        return false;
+
+    return motor->setDutyPercent(power / MAX_MAPPED_DUTY * (MAX_POWER_DUTY_PERC
+                                                            - MIN_POWER_DUTY_PERC)
                                  + MIN_POWER_DUTY_PERC);
 }
