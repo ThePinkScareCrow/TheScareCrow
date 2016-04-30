@@ -1,8 +1,4 @@
 #include "BlackLib/BlackPWM.h"
-#include <string>
-#include <unistd.h>
-#include <iostream>
-#include <stdio.h>
 
 #define MAX_MAPPED_DUTY     100.0
 #define PWM_PERIOD_MS         4.0
