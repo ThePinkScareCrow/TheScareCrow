@@ -24,7 +24,7 @@ public:
 
 	void clear(void);
 	PID(float kp_new, float ki_new, float kd_new);
-	bool update(float feedback_value);
+	bool update(float desired_value, float feedback_value);
 	void setKp(float proportional_gain);
 	void setKi(float integral_gain);
 	void setKd(float derivative_gain);

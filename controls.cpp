@@ -224,7 +224,7 @@ void loop()
 		bool update_flag = false;
 
 		for (int i = 0; i < 3; i++) {
-			if (pids_ypr[i]->update(actual_ypr[i]))
+			if (pids_ypr[i]->update(desired_ypr[i], actual_ypr[i]))
 				update_flag = true;
 		}
 

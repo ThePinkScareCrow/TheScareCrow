@@ -56,10 +56,12 @@ PID::PID(float kp_new, float ki_new, float kd_new)
 	this->setKd(kd_new);
 }
 
-bool PID::update(float feedback_value)
+bool PID::update(float desired_value, float feedback_value)
 {
 	current_time = time_with_ms();
         float delta_time = current_time - last_time;
+
+	set_point = desired_value;
 
         if (delta_time >= sample_time) {
 		float error = calculate_error(set_point, feedback_value);
