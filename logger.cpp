@@ -9,6 +9,15 @@ Logger::Logger(int fd_in, int freq_in = 1)
 	fd = fd_in;
 	freq = freq_in;
 	cur_loc = 0;
+	mode = file;
+}
+
+Logger::Logger(RF24 *radio_in, int freq_in = 1)
+{
+	radio = radio_in;
+	freq = freq_in;
+	cur_loc = 0;
+	mode = radio;
 }
 
 Logger::~Logger()
@@ -67,8 +76,18 @@ void Logger::update(uint16_t fifo_count, float actual_ypr[3],
 		int size_to_write = (data_size - (cur_loc));
 		if (size_to_write > MAX_WRITE_SIZE)
 			size_to_write = MAX_WRITE_SIZE;
-		int n = write(fd, data_buffer + cur_loc, size_to_write);
-		cur_loc += n;
+
+		if (mode == file) {
+			int n = write(fd, data_buffer + cur_loc,
+				      size_to_write);
+			cur_loc += n;
+		}
+		else {
+			if (radio->write(data_buffer + cur_loc,
+					 size_to_write))
+				cur_loc += size_to_write;
+		}
 	}
-	fsync(fd);
+	if (mode == file)
+		fsync(fd);
 }

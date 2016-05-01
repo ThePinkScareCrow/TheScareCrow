@@ -1,5 +1,6 @@
 #include "motor.hpp"
 #include "PID.hpp"
+#include <RF24/RF24.h>
 #include <stdint.h>
 
 /* Ensure that all debug data fits into this. Approximating to about
@@ -22,9 +23,16 @@ class Logger
 	 * packets/chunks by passing the frequency during
 	 * initialization */
 	int freq;
+	RF24 *radio;
+	enum output_mode
+	{
+		file,
+		radio
+	} mode;
 
 public:
 	Logger(int fd_in, int freq_in);
+	Logger(RF24 *radio_in, int freq_in);
 	~Logger();
 	void update(uint16_t fifo_count, float actual_ypr[3],
 		    float desired_ypr[3], float throttle,
