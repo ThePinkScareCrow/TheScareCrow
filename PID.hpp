@@ -9,15 +9,15 @@ public:
 	float Kd;
 
 	float sample_time;
-	float current_time;
-	float last_time;
+
+	float delta_time;
+	float delta_feedback;
+	float error;
 
 	float set_point;
 	float p_term;
 	float i_term;
 	float d_term;
-	float last_error;
-	float last_feedback;
 	float windup_guard;
 	float output;
 
@@ -29,6 +29,12 @@ public:
 	void setKd(float derivative_gain);
 	void setWindup(float windup);
 	void setSampleTime(float sample_time);
+
+private:
+	float last_error;
+	float last_feedback;
+	float last_time;
+	float current_time;
 };
 
 #endif
