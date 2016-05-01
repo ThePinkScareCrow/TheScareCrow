@@ -1,4 +1,5 @@
 #include "BlackLib/BlackPWM.h"
+#include "logger.hpp"
 #include "motor.hpp"
 #include "MPU6050_6Axis_MotionApps20.h"
 #include "PID.hpp"
@@ -13,9 +14,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#define DEBUG_MODE_MOTORS 0
-#define DEBUG_MODE 0
-#define DEBUG_MODE_WITH_PID 0
+#define LOG_FILE 0
 
 /*MPU Config */
 #define MAX_PACKETS_IN_BUFFER 3
@@ -65,6 +64,8 @@ const enum BlackLib::pwmName motor_pins[4] = {
 	BlackLib::EHRPWM2A,
 	BlackLib::EHRPWM2B
 };
+
+Logger *file_logger;
 
 /* Parse a control string and execute the command */
 void parse_and_execute(char *control_string)
@@ -168,6 +169,10 @@ void setup()
 	radio.enableDynamicPayloads();
 	radio.startListening();
 
+#if LOG_FILE
+	file_logger = new Logger(stdout, 1);
+#endif
+
         /* Initialize PID controllers */
         for(int i = 0; i < 3; i++)
 		pids_ypr[i] = new PID(pid_tunings[i][0], pid_tunings[i][1], pid_tunings[i][2]);
@@ -252,49 +257,18 @@ void loop()
 			 *
 			 * For yaw, motors 0 & 2 move anticlockwise from above.
 			 */
-			float m0, m1, m2, m3;
 
-			m0 = throttle - pids_ypr[0]->output + pids_ypr[1]->output - pids_ypr[2]->output;
-			m1 = throttle + pids_ypr[0]->output - pids_ypr[1]->output - pids_ypr[2]->output;
-			m2 = throttle - pids_ypr[0]->output - pids_ypr[1]->output + pids_ypr[2]->output;
-			m3 = throttle + pids_ypr[0]->output + pids_ypr[1]->output + pids_ypr[2]->output;
+			motors[0]->set_power(throttle - pids_ypr[0]->output + pids_ypr[1]->output - pids_ypr[2]->output);
+			motors[1]->set_power(throttle + pids_ypr[0]->output - pids_ypr[1]->output - pids_ypr[2]->output);
+			motors[2]->set_power(throttle - pids_ypr[0]->output - pids_ypr[1]->output + pids_ypr[2]->output);
+			motors[3]->set_power(throttle + pids_ypr[0]->output + pids_ypr[1]->output + pids_ypr[2]->output);
+                }
+        }
 
-			motors[0]->set_power(m0);
-			motors[1]->set_power(m1);
-			motors[2]->set_power(m2);
-			motors[3]->set_power(m3);
-
-#if DEBUG_MODE_MOTORS
-			cout << m0 << " " << m1 << " " << m2 << " " << m3 << " |";
-#endif
-		}
-	}
-
-#if DEBUG_MODE
-
-	printf("%.3f | ", elapsed_time_in_s());
-	printf("%d | ", max_fifo_count);
-
-	for (int i = 0; i < 3; i++)
-		printf("%3.3f ", actual_ypr[i]);
-
-	for (int i = 0; i < 3; i++)
-		printf("%3.3f ", desired_ypr[i]);
-
-	printf("%3.1f \"%s\" ", throttle, control_string);
-
-
-#if DEBUG_MODE_WITH_PID
-
-	for (int i = 0; i < 3; i++) {
-		for (int j = 0; j < 3; j++)
-			printf("%1.2f ", 4, pid_tunings[i][j]);
-	}
-
-#endif
-
-	printf("\n");
-
+#if LOG_FILE
+			file_logger->update(fifo_count, actual_ypr,
+					    desired_ypr, throttle,
+					    motors, pids_ypr);
 #endif
 }
 
