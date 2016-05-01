@@ -123,6 +123,9 @@ void parse_and_execute(char *control_string)
 				pid_tunings[ypr_update_index][2] = numeric_value;
 				pids_ypr[ypr_update_index]->setKd(pid_tunings[ypr_update_index][2]);
 				break;
+			case 'w':
+				pids_ypr[ypr_update_index]->setWindup(numeric_value);
+				break;
 			default:
 				fprintf(stderr, "Bad input");
 			}
