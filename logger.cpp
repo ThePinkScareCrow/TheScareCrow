@@ -10,6 +10,7 @@ Logger::Logger(int fd_in, int nchunks_in = 1)
 	nchunks = nchunks_in;
 	cur_loc = 0;
 	mode = file;
+	call_count = 0;
 }
 
 Logger::Logger(RF24 *radio_in, int nchunks_in = 1)
@@ -18,6 +19,7 @@ Logger::Logger(RF24 *radio_in, int nchunks_in = 1)
 	nchunks = nchunks_in;
 	cur_loc = 0;
 	mode = radio;
+        call_count = 0;
 }
 
 Logger::~Logger()
@@ -30,6 +32,7 @@ void Logger::update(uint16_t fifo_count, float actual_ypr[3],
 {
 	if (data_size - cur_loc > 0) {
 		data_size = sprintf(data_buffer,
+				    "%d"                    /* Call Count       */
 				    "%.3f "
 				    "%.3f "
 				    "%.3f %.3f %.3f "       /* Actual angles    */
@@ -43,6 +46,7 @@ void Logger::update(uint16_t fifo_count, float actual_ypr[3],
 				    "%.3f %.3f %.3f"        /* P, I, D terms    */
 				    "%.3f %.3f %.3f"        /* P, I, D terms    */
 				    ,
+				    call_count,
 				    elapsed_time_in_s(),
 				    fifo_count,
 
@@ -70,7 +74,10 @@ void Logger::update(uint16_t fifo_count, float actual_ypr[3],
 			);
 
 		cur_loc = 0;	/* Start writing from beginning of new string */
+		call_count = 0; /* Set call_count to 0 _after_ writing last log entry's call_count. */
 	}
+
+	call_count++; /* Increment call_count every time update() is called. */
 
 	for (int i = 0; i < nchunks; i++) {
 		int size_to_write = (data_size - (cur_loc));

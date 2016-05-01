@@ -5,7 +5,7 @@
 
 /* Ensure that all debug data fits into this. Approximating to about
  * 10 bytes a variable */
-#define MAX_BUFFER_SIZE            330
+#define MAX_BUFFER_SIZE            340
 #define MAX_WRITE_SIZE              32
 #define RADIO_BUFFER_WRITE_TIMEOUT   1
 #define RADIO_PAYLOAD_SEND_TIMEOUT   3
@@ -25,6 +25,10 @@ class Logger
 	 * packets/chunks by passing the number of chunks during
 	 * initialization */
 	int nchunks;
+	/* Keep track of the number of times update() is called to
+	 * approximate main control loop rate */
+	int call_count;
+
 	RF24 *radio;
 	enum output_mode
 	{
