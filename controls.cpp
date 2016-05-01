@@ -15,6 +15,7 @@
 #include <unistd.h>
 
 #define LOG_FILE 0
+#define LOG_RADIO 0
 
 /*MPU Config */
 #define MAX_PACKETS_IN_BUFFER 3
@@ -66,6 +67,7 @@ const enum BlackLib::pwmName motor_pins[4] = {
 };
 
 Logger *file_logger;
+Logger *radio_logger;
 
 /* Parse a control string and execute the command */
 void parse_and_execute(char *control_string)
@@ -172,6 +174,9 @@ void setup()
 #if LOG_FILE
 	file_logger = new Logger(stdout, 1);
 #endif
+#if LOG_RADIO
+	radio_logger = new Logger(&radio, 1);
+#endif
 
         /* Initialize PID controllers */
         for(int i = 0; i < 3; i++)
@@ -269,6 +274,12 @@ void loop()
 			file_logger->update(fifo_count, actual_ypr,
 					    desired_ypr, throttle,
 					    motors, pids_ypr);
+#endif
+
+#if LOG_RADIO
+			radio_logger->update(fifo_count, actual_ypr,
+					     desired_ypr, throttle,
+					     motors, pids_ypr);
 #endif
 }
 
