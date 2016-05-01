@@ -18,7 +18,6 @@ public:
 	float d_term;
 	float last_error;
 	float last_feedback;
-	float int_error;
 	float windup_guard;
 	float output;
 

@@ -39,7 +39,6 @@ void PID::clear(void)
 	d_term = 0.0;
 	last_error = 0.0;
 	last_feedback = 0.0;
-	int_error = 0.0;
 	windup_guard = 5.0;
 	output = 0.0;
 }
