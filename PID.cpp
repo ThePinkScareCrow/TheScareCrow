@@ -15,7 +15,7 @@ float time_with_ms()
 	return time_struct.tv_sec + ms / 1000;
 }
 
-float calculate_error(float desired, float actual)
+float difference_wrap_180(float desired, float actual)
 {
         float e = desired - actual;
 	float abs_e;
@@ -63,8 +63,8 @@ bool PID::update(float desired_value, float feedback_value)
 	set_point = desired_value;
 
         if (delta_time >= sample_time) {
-		error = calculate_error(set_point, feedback_value);
-		delta_feedback = calculate_error(last_feedback, feedback_value);
+		error = difference_wrap_180(set_point, feedback_value);
+		delta_feedback = difference_wrap_180(last_feedback, feedback_value);
 
 		p_term = Kp * error;
 		i_term += Ki * error * delta_time;
