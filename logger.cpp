@@ -1,7 +1,7 @@
 #include "logger.hpp"
-#include <string.h>
-#include <stdio.h>
 #include "utils.h"
+#include <stdio.h>
+#include <string.h>
 #include <unistd.h>
 
 Logger::Logger(int fd_in, int freq_in = 1)
