@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include "BlackLib/BlackPWM.h"
 #include <unistd.h>
+#include "utils.h"
 
 #define DEBUG_MODE_MOTORS 0
 #define DEBUG_MODE 0
@@ -271,11 +272,7 @@ void loop()
 
 #if DEBUG_MODE
 
-	struct timespec time_struct;
-
-	clock_gettime(CLOCK_MONOTONIC, &time_struct);
-
-	printf("%d.%d | ", time_struct.tv_sec, time_struct.tv_nsec / 1000000);
+	printf("%.3f | ", elapsed_time_in_s());
 	printf("%d | ", max_fifo_count);
 
 	for (int i = 0; i < 3; i++)

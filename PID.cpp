@@ -1,19 +1,10 @@
 #include "PID.hpp"
-#include <time.h>
 #include <iostream>
+#include "utils.h"
 
 using namespace std;
 
 #define DEBUG_PID_OUTPUT 0
-
-struct timespec time_struct;
-
-float time_with_ms()
-{
-	clock_gettime(CLOCK_MONOTONIC, &time_struct);
-	float ms = time_struct.tv_nsec / 1000000;
-	return time_struct.tv_sec + ms / 1000;
-}
 
 float difference_wrap_180(float desired, float actual)
 {
@@ -46,7 +37,7 @@ void PID::clear(void)
 PID::PID(float kp_new, float ki_new, float kd_new)
 {
 	sample_time = 0.003;
-	current_time = time_with_ms();
+	current_time = elapsed_time_in_s();
 	last_time = current_time;
 
 	this->clear();
@@ -57,7 +48,7 @@ PID::PID(float kp_new, float ki_new, float kd_new)
 
 bool PID::update(float desired_value, float feedback_value)
 {
-	current_time = time_with_ms();
+	current_time = elapsed_time_in_s();
         delta_time = current_time - last_time;
 
 	set_point = desired_value;
