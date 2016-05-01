@@ -77,19 +77,17 @@ bool PID::update(float desired_value, float feedback_value)
 
 		d_term = 0.0;
 		if (delta_time > 0)
-			d_term = delta_feedback / delta_time;
+			d_term = -Kd * (delta_feedback / delta_time);
 
 		last_time = current_time;
 		last_error = error;
 		last_feedback = feedback_value;
 
-		float k_term = - (Kd * d_term);
-
-		output = p_term + i_term + k_term;
+		output = p_term + i_term + d_term;
 
 #if DEBUG_PID_OUTPUT
 
-		cout << p_term << " " << i_term << " " << k_term << " " << error;
+		cout << p_term << " " << i_term << " " << d_term << " " << error;
 
 #endif
 
