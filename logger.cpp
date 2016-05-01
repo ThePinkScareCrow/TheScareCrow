@@ -4,18 +4,18 @@
 #include <string.h>
 #include <unistd.h>
 
-Logger::Logger(int fd_in, int freq_in = 1)
+Logger::Logger(int fd_in, int nchunks_in = 1)
 {
 	fd = fd_in;
-	freq = freq_in;
+	nchunks = nchunks_in;
 	cur_loc = 0;
 	mode = file;
 }
 
-Logger::Logger(RF24 *radio_in, int freq_in = 1)
+Logger::Logger(RF24 *radio_in, int nchunks_in = 1)
 {
 	radio = radio_in;
-	freq = freq_in;
+	nchunks = nchunks_in;
 	cur_loc = 0;
 	mode = radio;
 }
@@ -72,7 +72,7 @@ void Logger::update(uint16_t fifo_count, float actual_ypr[3],
 		cur_loc = 0;	/* Start writing from beginning of new string */
 	}
 
-	for (int i = 0; i < freq; i++) {
+	for (int i = 0; i < nchunks; i++) {
 		int size_to_write = (data_size - (cur_loc));
 		if (size_to_write > MAX_WRITE_SIZE)
 			size_to_write = MAX_WRITE_SIZE;

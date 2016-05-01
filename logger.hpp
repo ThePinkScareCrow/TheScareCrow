@@ -22,9 +22,9 @@ class Logger
 	/* By default, the number of times a packet is written out
 	 * through the radio or the number of MAX_WRITE_SIZE chunks
 	 * written to file is 1. This can be changed to write more
-	 * packets/chunks by passing the frequency during
+	 * packets/chunks by passing the number of chunks during
 	 * initialization */
-	int freq;
+	int nchunks;
 	RF24 *radio;
 	enum output_mode
 	{
@@ -33,8 +33,8 @@ class Logger
 	} mode;
 
 public:
-	Logger(int fd_in, int freq_in);
-	Logger(RF24 *radio_in, int freq_in);
+	Logger(int fd_in, int nchunks_in);
+	Logger(RF24 *radio_in, int nchunks_in);
 	~Logger();
 	void update(uint16_t fifo_count, float actual_ypr[3],
 		    float desired_ypr[3], float throttle,
