@@ -109,6 +109,9 @@ void parse_and_execute(char *control_string)
 			case 'r':
 				ypr_update_index = 2;
 				break;
+			default:
+				fprintf(stderr, "Radio: Bad input");
+				return;
 			}
 			switch(command[1]) {
 			case 'p':
@@ -127,7 +130,8 @@ void parse_and_execute(char *control_string)
 				pids_ypr[ypr_update_index]->setWindup(numeric_value);
 				break;
 			default:
-				fprintf(stderr, "Bad input");
+				fprintf(stderr, "Radio: Bad input");
+				return;
 			}
 		}
 	}
