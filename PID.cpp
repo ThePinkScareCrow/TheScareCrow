@@ -58,13 +58,13 @@ PID::PID(float kp_new, float ki_new, float kd_new)
 bool PID::update(float desired_value, float feedback_value)
 {
 	current_time = time_with_ms();
-        float delta_time = current_time - last_time;
+        delta_time = current_time - last_time;
 
 	set_point = desired_value;
 
         if (delta_time >= sample_time) {
-		float error = calculate_error(set_point, feedback_value);
-		float delta_feedback = calculate_error(last_feedback, feedback_value);
+		error = calculate_error(set_point, feedback_value);
+		delta_feedback = calculate_error(last_feedback, feedback_value);
 
 		p_term = Kp * error;
 		i_term += Ki * error * delta_time;
