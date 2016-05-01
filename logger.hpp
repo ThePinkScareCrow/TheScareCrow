@@ -5,8 +5,10 @@
 
 /* Ensure that all debug data fits into this. Approximating to about
  * 10 bytes a variable */
-#define MAX_BUFFER_SIZE 330
-#define MAX_WRITE_SIZE   32
+#define MAX_BUFFER_SIZE            330
+#define MAX_WRITE_SIZE              32
+#define RADIO_BUFFER_WRITE_TIMEOUT   1
+#define RADIO_PAYLOAD_SEND_TIMEOUT   3
 
 class Logger
 {

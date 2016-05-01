@@ -83,8 +83,10 @@ void Logger::update(uint16_t fifo_count, float actual_ypr[3],
 			cur_loc += n;
 		}
 		else {
-			if (radio->write(data_buffer + cur_loc,
-					 size_to_write))
+			bool write_ok = (radio->writeBlocking(data_buffer + cur_loc,
+							size_to_write,
+							RADIO_BUFFER_WRITE_TIMEOUT));
+			if (write_ok && txStandBy(RADIO_PAYLOAD_SEND_TIMEOUT))
 				cur_loc += size_to_write;
 		}
 	}
