@@ -1,7 +1,7 @@
 CC=g++
 CFLAGS=-c -w -g
 
-SOURCES=I2Cdev.cpp MPU6050.cpp PID.cpp motor.cpp BlackLib/BlackCore.cpp BlackLib/BlackPWM.cpp controls.cpp
+SOURCES=I2Cdev.cpp MPU6050.cpp utils.c PID.cpp motor.cpp BlackLib/BlackCore.cpp BlackLib/BlackPWM.cpp controls.cpp
 OBJECTS=$(SOURCES:.cpp=.o)
 EXECUTABLE=controls
 
