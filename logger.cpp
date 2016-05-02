@@ -55,22 +55,22 @@ void Logger::update(uint16_t fifo_count, float actual_ypr[3],
 
 				    throttle,
 
-				    motors[0]->get_power(), motors[1]->get_power(),
-				    motors[2]->get_power(), motors[3]->get_power(),
+				    motors[0].get_power(), motors[1].get_power(),
+				    motors[2].get_power(), motors[3].get_power(),
 
-				    pids_ypr[0]->Kp, pids_ypr[0]->Ki,
-				    pids_ypr[0]->Kd, pids_ypr[0]->windup_guard,
+				    pids_ypr[0].Kp, pids_ypr[0].Ki,
+				    pids_ypr[0].Kd, pids_ypr[0].windup_guard,
 
-				    pids_ypr[1]->Kp, pids_ypr[1]->Ki,
-				    pids_ypr[1]->Kd, pids_ypr[1]->windup_guard,
+				    pids_ypr[1].Kp, pids_ypr[1].Ki,
+				    pids_ypr[1].Kd, pids_ypr[1].windup_guard,
 
-				    pids_ypr[2]->Kp, pids_ypr[2]->Ki,
-				    pids_ypr[2]->Kd, pids_ypr[2]->windup_guard,
+				    pids_ypr[2].Kp, pids_ypr[2].Ki,
+				    pids_ypr[2].Kd, pids_ypr[2].windup_guard,
 
 
-				    pids_ypr[0]->p_term, pids_ypr[0]->i_term, pids_ypr[0]->d_term,
-				    pids_ypr[1]->p_term, pids_ypr[1]->i_term, pids_ypr[1]->d_term,
-				    pids_ypr[2]->p_term, pids_ypr[2]->i_term, pids_ypr[2]->d_term
+				    pids_ypr[0].p_term, pids_ypr[0].i_term, pids_ypr[0].d_term,
+				    pids_ypr[1].p_term, pids_ypr[1].i_term, pids_ypr[1].d_term,
+				    pids_ypr[2].p_term, pids_ypr[2].i_term, pids_ypr[2].d_term
 			);
 
 		cur_loc = 0;	/* Start writing from beginning of new string */
