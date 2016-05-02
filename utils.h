@@ -1,10 +1,6 @@
-#include <time.h>
+#ifndef _UTILS_H_
+#define _UTILS_H_
 
-float elapsed_time_in_s()
-{
-    struct timespec time_struct;
+float elapsed_time_in_s();
 
-    clock_gettime(CLOCK_MONOTONIC, &time_struct);
-
-    return (time_struct.tv_sec + time_struct.tv_nsec / 1.0e9);
-}
+#endif
