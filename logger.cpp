@@ -9,7 +9,7 @@ Logger::Logger(int fd_in, int nchunks_in = 1)
 	fd = fd_in;
 	nchunks = nchunks_in;
 	cur_loc = 0;
-	mode = file;
+	mode = FILE;
 	call_count = 0;
 }
 
@@ -18,7 +18,7 @@ Logger::Logger(RF24 *radio_in, int nchunks_in = 1)
 	radio = radio_in;
 	nchunks = nchunks_in;
 	cur_loc = 0;
-	mode = radio;
+	mode = RADIO;
         call_count = 0;
 }
 
@@ -84,7 +84,7 @@ void Logger::update(uint16_t fifo_count, float actual_ypr[3],
 		if (size_to_write > MAX_WRITE_SIZE)
 			size_to_write = MAX_WRITE_SIZE;
 
-		if (mode == file) {
+		if (mode == FILE) {
 			int n = write(fd, data_buffer + cur_loc,
 				      size_to_write);
 			cur_loc += n;
@@ -97,6 +97,6 @@ void Logger::update(uint16_t fifo_count, float actual_ypr[3],
 				cur_loc += size_to_write;
 		}
 	}
-	if (mode == file)
+	if (mode == FILE)
 		fsync(fd);
 }

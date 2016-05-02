@@ -32,8 +32,8 @@ class Logger
 	RF24 *radio;
 	enum output_mode
 	{
-		file,
-		radio
+		FILE,
+		RADIO
 	} mode;
 
 public:
