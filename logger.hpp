@@ -1,3 +1,6 @@
+#ifndef _LOGGER_HPP_
+#define _LOGGER_HPP_
+
 #include "motor.hpp"
 #include "PID.hpp"
 #include <RF24/RF24.h>
@@ -44,3 +47,5 @@ public:
 		    float desired_ypr[3], float throttle,
 		    Motor motors[4], PID pids_ypr[3]);
 };
+
+#endif

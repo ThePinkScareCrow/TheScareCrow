@@ -1,3 +1,6 @@
+#ifndef _MOTOR_HPP_
+#define _MOTOR_HPP_
+
 #include "BlackLib/BlackPWM.h"
 
 #define MAX_MAPPED_DUTY     100.0
@@ -13,3 +16,5 @@ public:
 	float get_power();
 	bool set_power(float power);
 };
+
+#endif
