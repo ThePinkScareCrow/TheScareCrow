@@ -1,7 +1,7 @@
 CC=g++
 CFLAGS=-c -w -std=c++11
 
-SOURCES=I2Cdev.cpp MPU6050.cpp utils.c PID.cpp motor.cpp BlackLib/BlackCore.cpp BlackLib/BlackPWM.cpp logger.cpp controls.cpp
+SOURCES=I2Cdev.cpp MPU6050.cpp utils.c PID.cpp motor.cpp logger.cpp controls.cpp
 OBJECTS=$(SOURCES:.cpp=.o)
 EXECUTABLE=controls
 
@@ -14,4 +14,4 @@ $(EXECUTABLE): $(OBJECTS)
 	$(CC) $(CFLAGS) $< -o $@
 
 clean:
-	rm *.o controls BlackLib/*.o
+	rm *.o controls

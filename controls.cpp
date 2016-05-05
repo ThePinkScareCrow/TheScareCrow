@@ -1,4 +1,3 @@
-#include "BlackLib/BlackPWM.h"
 #include "logger.hpp"
 #include "motor.hpp"
 #include "MPU6050_6Axis_MotionApps20.h"
@@ -59,11 +58,11 @@ const uint8_t pipes[][6] = {"1Node","2Node"};
 char radio_msg[32];
 
 Motor *motors[4];
-const enum BlackLib::pwmName motor_pins[4] = {
-	BlackLib::EHRPWM1A,
-	BlackLib::EHRPWM1B,
-	BlackLib::EHRPWM2A,
-	BlackLib::EHRPWM2B
+const char *motor_pins[4] = {
+	"P1-7",
+	"P1-11",
+	"P1-12",
+	"P1-13"
 };
 
 Logger *file_logger;

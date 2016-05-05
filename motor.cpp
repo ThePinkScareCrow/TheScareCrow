@@ -1,23 +1,27 @@
 #include "motor.hpp"
+#include <fcntl.h>
+#include <stdio.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
 
-Motor::Motor(BlackLib::pwmName pin)
+int Motor::_servo_fd;
+
+Motor::Motor(const char *pin_name)
 {
-	motor = new BlackLib::BlackPWM(pin);
-	/* if new period value is less than the current duty value,
-	 * the new period value setting operation won't execute. So
-	 * firstly duty value is set to zero for safe steps. Duty can
-	 * be set to 0 (the value returned by
-	 * BlackLib::BlackPWM::getDutyValue()). This is achieved by
-	 * setDutyPercent(100)
-	 */
-	motor->setDutyPercent(100);
-	motor->setPeriodTime(PWM_PERIOD_MS, BlackLib::milisecond);
+	_pin_name = pin_name;
+
+	/* static int _servo_fd will be initialized to 0 */
+	if (!_servo_fd)
+		_servo_fd = open("/dev/servoblaster", NULL);
+
+	this->set_power(0);
+	_power = 0;
 }
 
 Motor::~Motor()
 {
 	this->set_power(0);
-	free(this);
 }
 
 /*
@@ -25,8 +29,7 @@ Motor::~Motor()
  */
 float Motor::get_power()
 {
-	return (motor->getNumericValue() - MIN_POWER_DUTY_PERC)
-		* MAX_MAPPED_DUTY / (MAX_POWER_DUTY_PERC - MIN_POWER_DUTY_PERC);
+	return _power;
 }
 
 /*
@@ -34,10 +37,18 @@ float Motor::get_power()
  */
 bool Motor::set_power(float power)
 {
+	char buf[10];
+
 	if (power < 0 || power > 100)
 		return false;
 
-	return motor->setDutyPercent(power / MAX_MAPPED_DUTY * (MAX_POWER_DUTY_PERC
-								- MIN_POWER_DUTY_PERC)
-				     + MIN_POWER_DUTY_PERC);
+	int p = _power / MAX_MAPPED_DUTY
+		* (MAX_PULSE_WIDTH - MIN_PULSE_WIDTH)
+		+ MIN_PULSE_WIDTH;
+
+	int n = sprintf(buf, "%s=%d",
+			_pin_name,
+			p);
+
+	write(_servo_fd, buf, n);
 }
