@@ -1,17 +1,18 @@
+#include "BlackLib/BlackPWM.h"
 #include "MPU6050_6Axis_MotionApps20.h"
-#include <stdint.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <iostream>
-#include <ctime>
-#include <RF24/RF24.h>
 #include "PID.hpp"
 #include "motor.hpp"
-#include <string.h>
-#include <stdlib.h>
-#include "BlackLib/BlackPWM.h"
-#include <unistd.h>
 #include "utils.h"
+
+#include <RF24/RF24.h>
+#include <ctime>
+#include <iostream>
+#include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 #define DEBUG_MODE_MOTORS 0
 #define DEBUG_MODE 0
