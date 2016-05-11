@@ -14,22 +14,23 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+/* Debug modes */
 #define DEBUG_MODE_MOTORS 0
 #define DEBUG_MODE 0
 #define DEBUG_MODE_WITH_PID 0
 
-/*MPU Config */
+/* MPU Config */
 #define MAX_PACKETS_IN_BUFFER 3
 #define MAX_BUFFER_SIZE 1024
 
-/*Radio Config*/
+/* Radio Config */
 #define MAX_RADIO_MSG_SIZE 15
 #define NUM_OF_RADIO_CHANNELS 4
 #define TIME_BEFORE_RESENDING 15
 #define TRIES_BEFORE_QUITTING 15
 #define RADIO_CHANNEL 50
 
-/*Motor Config*/
+/* Motor Config */
 #define NUM_OF_MOTORS 4
 
 using namespace std;
@@ -38,11 +39,13 @@ MPU6050 mpu;
 
 uint16_t packet_size;
 uint16_t fifo_count;     /* Count of all bytes currently in FIFO  */
-uint8_t fifo_buffer[64]; /* FIFO storage buffer */
+uint8_t fifo_buffer[64]; /* FIFO packet buffer */
 
 Quaternion q;           /* [w, x, y, z]         quaternion container */
 VectorFloat gravity;    /* [x, y, z]            gravity vector */
-float actual_ypr[3];    /* [yaw, pitch, roll]   yaw/pitch/roll container and gravity vector */
+/* [yaw, pitch, roll] absolute yaw/pitch/roll corrected for drift by
+ * using the accelerometer */
+float actual_ypr[3];
 
 PID *pids_ypr[3];
 float desired_ypr[3] = {0, 0, 0};
@@ -55,7 +58,7 @@ float pid_tunings[3][3] = {
 
 float throttle = 0;
 
-RF24 radio(49, 0);
+RF24 radio(49, 0); /* GPIO 49 = P9_23; Default CSN */
 const uint8_t pipes[][6] = {"1Node","2Node"};
 char radio_msg[32];
 
@@ -207,15 +210,18 @@ void loop()
 	max_fifo_count = fifo_count;
 
 	while ((fifo_count/packet_size) > 0) {
+		/* Read value from FIFO buffer */
 		mpu.getFIFOBytes(fifo_buffer, packet_size);
+		/* Calculate absolute angle */
 		mpu.dmpGetQuaternion(&q, fifo_buffer);
 		mpu.dmpGetGravity(&gravity, &q);
 		mpu.dmpGetYawPitchRoll(actual_ypr, &q, &gravity);
 
+		/* Keep track of packets remaining */
 		fifo_count -= packet_size;
 	}
 
-	/*  We need the angles in Cartesian format */
+	/*  Convert radians to degrees */
 	for (int i = 0; i < 3; i++)
 		actual_ypr[i] *= 180 / M_PI;
 
@@ -227,9 +233,9 @@ void loop()
 			length = MAX_RADIO_MSG_SIZE < length ? MAX_RADIO_MSG_SIZE : length;
 			radio.read(control_string, length);
 			strncpy(control_string_copy, control_string, length);
+			/* Update system values based on control input from pilot */
 			parse_and_execute(control_string_copy);
 		}
-                /* TODO: Convert radio_msg into control_string cleanly. Consider strtok() */
 	}
 
         if (throttle < 2) {
