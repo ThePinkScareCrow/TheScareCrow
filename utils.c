@@ -19,3 +19,19 @@ inline float constrain(float value, float low, float high)
     else
         return value;
 }
+
+float difference_wrap_180(float desired, float actual)
+{
+    float e = desired - actual;
+    float abs_e;
+
+    if (e < 0)
+        abs_e = -e;
+    if (360 - abs_e < abs_e) {
+        if (e > 0)
+            e = - (360 - e);
+        else
+            e = 360 + e;
+    }
+    return e;
+}

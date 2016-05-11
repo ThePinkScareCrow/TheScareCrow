@@ -6,22 +6,6 @@ using namespace std;
 
 #define DEBUG_PID_OUTPUT 0
 
-float difference_wrap_180(float desired, float actual)
-{
-        float e = desired - actual;
-	float abs_e;
-
-	if (e < 0)
-		abs_e = -e;
-        if (360 - abs_e < abs_e) {
-		if (e > 0)
-			e = - (360 - e);
-		else
-			e = 360 + e;
-	}
-        return e;
-}
-
 void PID::clear(void)
 {
 	set_point = 0.0;
