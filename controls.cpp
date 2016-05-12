@@ -49,11 +49,6 @@ float actual_ypr[3];
 
 PID *pids_ypr[3];
 float desired_ypr[3] = {0, 0, 0};
-float pid_tunings[3][3] = {
-	{0, 0, 0},
-	{0, 0, 0},
-	{0, 0, 0}
-};
 
 float throttle = 0;
 
@@ -119,16 +114,13 @@ void parse_and_execute(char *control_string)
 			}
 			switch(command[1]) {
 			case 'p':
-				pid_tunings[ypr_update_index][0] = numeric_value;
-				pids_ypr[ypr_update_index]->setKp(pid_tunings[ypr_update_index][0]);
+				pids_ypr[ypr_update_index]->setKp(numeric_value);
 				break;
 			case 'i':
-				pid_tunings[ypr_update_index][1] = numeric_value;
-				pids_ypr[ypr_update_index]->setKi(pid_tunings[ypr_update_index][1]);
+				pids_ypr[ypr_update_index]->setKi(numeric_value);
 				break;
 			case 'd':
-				pid_tunings[ypr_update_index][2] = numeric_value;
-				pids_ypr[ypr_update_index]->setKd(pid_tunings[ypr_update_index][2]);
+				pids_ypr[ypr_update_index]->setKd(numeric_value);
 				break;
 			case 'w':
 				pids_ypr[ypr_update_index]->setWindup(numeric_value);
@@ -173,7 +165,7 @@ void setup()
 
         /* Initialize PID controllers */
         for(int i = 0; i < 3; i++)
-		pids_ypr[i] = new PID(pid_tunings[i][0], pid_tunings[i][1], pid_tunings[i][2]);
+		pids_ypr[i] = new PID(0, 0, 0);
 
 	/* Initialize Motors */
 	for(int i = 0; i < 4; i++)
@@ -293,8 +285,9 @@ void loop()
 #if DEBUG_MODE_WITH_PID
 
 	for (int i = 0; i < 3; i++) {
-		for (int j = 0; j < 3; j++)
-			printf("%1.2f ", 4, pid_tunings[i][j]);
+                printf("%1.2f ", 4, pids_ypr[i]->Kp);
+                printf("%1.2f ", 4, pids_ypr[i]->Ki);
+                printf("%1.2f ", 4, pids_ypr[i]->Kd);
 	}
 
 #endif
