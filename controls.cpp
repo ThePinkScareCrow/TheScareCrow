@@ -75,7 +75,6 @@ void parse_and_execute(char *control_string)
 	float numeric_value;
 	int ypr_update_index = -1;
 	int pid_update_index = -1;
-
 	/* control_string is modified */
 	command = strtok(control_string, " ");
 	value = strtok(NULL, " ");
@@ -101,7 +100,22 @@ void parse_and_execute(char *control_string)
 			 * Therefore, "pi" would mean the integral
 			 * tuning constant for pitch.
 			 */
+
+			enum {
+				rate,
+				stab
+			} pid_type;
+
 			switch(command[0]) {
+			case 's':
+				pid_type = stab;
+			case 'r':
+				pid_type = rate;
+			default:
+				fprintf(stderr, "Radio: Bad input");
+				return;
+			}
+			switch(command[1]) {
 			case 'y':
 				ypr_update_index = 0;
 				break;
@@ -115,15 +129,24 @@ void parse_and_execute(char *control_string)
 				fprintf(stderr, "Radio: Bad input");
 				return;
 			}
-			switch(command[1]) {
+			switch(command[2]) {
 			case 'p':
-				stab_pids_ypr[ypr_update_index]->setKp(numeric_value);
+				if (pid_type == stab)
+					stab_pids_ypr[ypr_update_index]->setKp(numeric_value);
+				else
+					rate_pids_ypr[ypr_update_index]->setKp(numeric_value);
 				break;
 			case 'i':
-				stab_pids_ypr[ypr_update_index]->setKi(numeric_value);
+				if (pid_type == stab)
+					stab_pids_ypr[ypr_update_index]->setKi(numeric_value);
+				else
+					rate_pids_ypr[ypr_update_index]->setKi(numeric_value);
 				break;
 			case 'd':
-				stab_pids_ypr[ypr_update_index]->setKd(numeric_value);
+				if (pid_type == stab)
+					stab_pids_ypr[ypr_update_index]->setKd(numeric_value);
+				else
+					rate_pids_ypr[ypr_update_index]->setKd(numeric_value);
 				break;
 			case 'w':
 				stab_pids_ypr[ypr_update_index]->setWindup(numeric_value);
