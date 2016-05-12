@@ -18,12 +18,14 @@ void PID::clear(void)
 	output = 0.0;
 }
 
-PID::PID(float kp_new, float ki_new, float kd_new)
+PID::PID(float (*error_func)(float desired, float actual),
+         float kp_new, float ki_new, float kd_new)
 {
 	current_time = elapsed_time_in_s();
 	last_time = current_time;
 
 	this->clear();
+        this->calculate_error = error_func;
 	this->setKp(kp_new);
 	this->setKi(ki_new);
 	this->setKd(kd_new);
@@ -36,8 +38,8 @@ void PID::update(float desired_value, float feedback_value)
 
 	set_point = desired_value;
 
-        error = difference_wrap_180(set_point, feedback_value);
-        delta_feedback = difference_wrap_180(last_feedback, feedback_value);
+        error = (*calculate_error)(set_point, feedback_value);
+        delta_feedback = (*calculate_error)(last_feedback, feedback_value);
 
         p_term = Kp * error;
         i_term += Ki * error * delta_time;
