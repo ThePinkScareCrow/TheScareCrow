@@ -46,7 +46,7 @@ VectorFloat gravity;         /* [x, y, z]            gravity vector */
 
 float actual_ypr[3];         /* Actual yaw/pitch/roll values obtained from the MPU */
 float desired_ypr[3] = {0};  /* Desired yaw/pitch/roll values obtained from the user */
-PID *pids_ypr[3];
+PID *stab_pids_ypr[3];       /* The PID to correct the orientation of the quadcopter (Angle) */
 
 float throttle = 0;
 
@@ -112,16 +112,16 @@ void parse_and_execute(char *control_string)
 			}
 			switch(command[1]) {
 			case 'p':
-				pids_ypr[ypr_update_index]->setKp(numeric_value);
+				stab_pids_ypr[ypr_update_index]->setKp(numeric_value);
 				break;
 			case 'i':
-				pids_ypr[ypr_update_index]->setKi(numeric_value);
+				stab_pids_ypr[ypr_update_index]->setKi(numeric_value);
 				break;
 			case 'd':
-				pids_ypr[ypr_update_index]->setKd(numeric_value);
+				stab_pids_ypr[ypr_update_index]->setKd(numeric_value);
 				break;
 			case 'w':
-				pids_ypr[ypr_update_index]->setWindup(numeric_value);
+				stab_pids_ypr[ypr_update_index]->setWindup(numeric_value);
 				break;
 			default:
 				fprintf(stderr, "Radio: Bad input");
@@ -163,7 +163,7 @@ void setup()
 
         /* Initialize PID controllers */
         for(int i = 0; i < 3; i++)
-		pids_ypr[i] = new PID(0, 0, 0);
+		stab_pids_ypr[i] = new PID(0, 0, 0);
 
 	/* Initialize Motors */
 	for(int i = 0; i < 4; i++)
@@ -235,7 +235,7 @@ void loop()
 		bool update_flag = false;
 
 		for (int i = 0; i < 3; i++) {
-			if (pids_ypr[i]->update(desired_ypr[i], actual_ypr[i]))
+			if (stab_pids_ypr[i]->update(desired_ypr[i], actual_ypr[i]))
 				update_flag = true;
 		}
 
@@ -250,10 +250,10 @@ void loop()
 			 */
 			float m0, m1, m2, m3;
 
-			m0 = throttle - pids_ypr[0]->output + pids_ypr[1]->output - pids_ypr[2]->output;
-			m1 = throttle + pids_ypr[0]->output - pids_ypr[1]->output - pids_ypr[2]->output;
-			m2 = throttle - pids_ypr[0]->output - pids_ypr[1]->output + pids_ypr[2]->output;
-			m3 = throttle + pids_ypr[0]->output + pids_ypr[1]->output + pids_ypr[2]->output;
+			m0 = throttle - stab_pids_ypr[0]->output + stab_pids_ypr[1]->output - stab_pids_ypr[2]->output;
+			m1 = throttle + stab_pids_ypr[0]->output - stab_pids_ypr[1]->output - stab_pids_ypr[2]->output;
+			m2 = throttle - stab_pids_ypr[0]->output - stab_pids_ypr[1]->output + stab_pids_ypr[2]->output;
+			m3 = throttle + stab_pids_ypr[0]->output + stab_pids_ypr[1]->output + stab_pids_ypr[2]->output;
 
 			motors[0]->set_power(m0);
 			motors[1]->set_power(m1);
@@ -283,9 +283,9 @@ void loop()
 #if DEBUG_MODE_WITH_PID
 
 	for (int i = 0; i < 3; i++) {
-                printf("%1.2f ", 4, pids_ypr[i]->Kp);
-                printf("%1.2f ", 4, pids_ypr[i]->Ki);
-                printf("%1.2f ", 4, pids_ypr[i]->Kd);
+                printf("%1.2f ", 4, stab_pids_ypr[i]->Kp);
+                printf("%1.2f ", 4, stab_pids_ypr[i]->Ki);
+                printf("%1.2f ", 4, stab_pids_ypr[i]->Kd);
 	}
 
 #endif
