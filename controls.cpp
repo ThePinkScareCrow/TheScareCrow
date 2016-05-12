@@ -38,21 +38,19 @@ using namespace std;
 MPU6050 mpu;
 
 uint16_t packet_size;
-uint16_t fifo_count;     /* Count of all bytes currently in FIFO  */
-uint8_t fifo_buffer[64]; /* FIFO packet buffer */
+uint16_t fifo_count;         /* Count of all bytes currently in FIFO  */
+uint8_t fifo_buffer[64];     /* FIFO packet buffer */
 
-Quaternion q;           /* [w, x, y, z]         quaternion container */
-VectorFloat gravity;    /* [x, y, z]            gravity vector */
-/* [yaw, pitch, roll] absolute yaw/pitch/roll corrected for drift by
- * using the accelerometer */
-float actual_ypr[3];
+Quaternion q;                /* [w, x, y, z]         quaternion container */
+VectorFloat gravity;         /* [x, y, z]            gravity vector */
 
+float actual_ypr[3];         /* Actual yaw/pitch/roll values obtained from the MPU */
+float desired_ypr[3] = {0};  /* Desired yaw/pitch/roll values obtained from the user */
 PID *pids_ypr[3];
-float desired_ypr[3] = {0, 0, 0};
 
 float throttle = 0;
 
-RF24 radio(49, 0); /* GPIO 49 = P9_23; Default CSN */
+RF24 radio(49, 0);           /* GPIO 49 = P9_23; Default CSN */
 const uint8_t pipes[][6] = {"1Node","2Node"};
 char radio_msg[32];
 
