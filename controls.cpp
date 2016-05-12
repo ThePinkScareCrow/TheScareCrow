@@ -149,7 +149,10 @@ void parse_and_execute(char *control_string)
 					rate_pids_ypr[ypr_update_index]->setKd(numeric_value);
 				break;
 			case 'w':
-				stab_pids_ypr[ypr_update_index]->setWindup(numeric_value);
+				if (pid_type == stab)
+					stab_pids_ypr[ypr_update_index]->setWindup(numeric_value);
+				else
+					rate_pids_ypr[ypr_update_index]->setWindup(numeric_value);
 				break;
 			default:
 				fprintf(stderr, "Radio: Bad input");
