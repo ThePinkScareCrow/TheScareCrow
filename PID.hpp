@@ -20,7 +20,8 @@ public:
 	float output;
 
 	void clear(void);
-	PID(float kp_new, float ki_new, float kd_new);
+	PID(float (*error_func)(float desired, float actual),
+	    float kp_new, float ki_new, float kd_new);
 	void update(float desired_value, float feedback_value);
 	void setKp(float proportional_gain);
 	void setKi(float integral_gain);
@@ -32,6 +33,8 @@ private:
 	float last_feedback;
 	float last_time;
 	float current_time;
+	float (*calculate_error)(float desired, float actual);
+
 };
 
 #endif

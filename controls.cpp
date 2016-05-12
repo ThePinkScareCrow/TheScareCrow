@@ -194,8 +194,8 @@ void setup()
 
         /* Initialize PID controllers */
         for(int i = 0; i < 3; i++) {
-		stab_pids_ypr[i] = new PID(0, 0, 0);
-		rate_pids_ypr[i] = new PID(0, 0, 0);
+		stab_pids_ypr[i] = new PID(&difference_wrap_180, 0, 0, 0);
+		rate_pids_ypr[i] = new PID(&difference, 0, 0, 0);
 	}
 	/* Initialize Motors */
 	for(int i = 0; i < 4; i++)
