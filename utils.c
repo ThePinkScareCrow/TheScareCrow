@@ -35,3 +35,8 @@ float difference_wrap_180(float desired, float actual)
     }
     return e;
 }
+
+float difference(float desired, float actual)
+{
+    return (desired - actual);
+}
