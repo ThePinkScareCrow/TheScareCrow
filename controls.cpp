@@ -33,6 +33,9 @@
 /* Motor Config */
 #define NUM_OF_MOTORS 4
 
+/* Math constant */
+#define MATH_180_BY_PI 57.2957795131
+
 using namespace std;
 
 MPU6050 mpu;
@@ -46,7 +49,9 @@ VectorFloat gravity;         /* [x, y, z]            gravity vector */
 
 float actual_ypr[3];         /* Actual yaw/pitch/roll values obtained from the MPU */
 float desired_ypr[3] = {0};  /* Desired yaw/pitch/roll values obtained from the user */
+int16_t rate_ypr[3];         /* Actual angular velocity about yaw/pitch/roll in deg/s */
 PID *stab_pids_ypr[3];       /* The PID to correct the orientation of the quadcopter (Angle) */
+PID *rate_pids_ypr[3];
 
 float throttle = 0;
 
@@ -162,9 +167,10 @@ void setup()
 	radio.startListening();
 
         /* Initialize PID controllers */
-        for(int i = 0; i < 3; i++)
+        for(int i = 0; i < 3; i++) {
 		stab_pids_ypr[i] = new PID(0, 0, 0);
-
+		rate_pids_ypr[i] = new PID(0, 0, 0);
+	}
 	/* Initialize Motors */
 	for(int i = 0; i < 4; i++)
 		motors[i] = new Motor(motor_pins[i]);
@@ -182,6 +188,7 @@ void loop()
 	uint16_t channels[NUM_OF_RADIO_CHANNELS];
 	float motor[NUM_OF_MOTORS];
 	int max_fifo_count = 0;
+	int16_t rate_ypr_tmp[3];
 
 	fifo_count = mpu.getFIFOCount();
 
@@ -205,6 +212,7 @@ void loop()
 		mpu.dmpGetQuaternion(&q, fifo_buffer);
 		mpu.dmpGetGravity(&gravity, &q);
 		mpu.dmpGetYawPitchRoll(actual_ypr, &q, &gravity);
+		mpu.dmpGetGyro(rate_ypr_tmp, fifo_buffer);
 
 		/* Keep track of packets remaining */
 		fifo_count -= packet_size;
@@ -213,6 +221,13 @@ void loop()
 	/*  Convert radians to degrees */
 	for (int i = 0; i < 3; i++)
 		actual_ypr[i] *= 180 / M_PI;
+
+	/*
+	 * dmpGetGyro() gives us X/Y/Z values, map this to Yaw/Pitch/Roll.
+	 * While doing this convert the obtained values from rad/s to deg/s.
+	 */
+	for (int i = 0; i < 3; i++)
+		rate_ypr[i] = rate_ypr_tmp[2-i] * MATH_180_BY_PI;
 
 	/* Read from radio if data is available */
 	if (radio.available()) {
@@ -234,6 +249,7 @@ void loop()
         } else {
 		for (int i = 0; i < 3; i++) {
 			stab_pids_ypr[i]->update(desired_ypr[i], actual_ypr[i]);
+			rate_pids_ypr[i]->update(stab_pids_ypr[i]->output, rate_ypr);
 		}
 
 		/* The output of the PID must be positive in
@@ -244,10 +260,10 @@ void loop()
 		 */
 		float m0, m1, m2, m3;
 
-		m0 = throttle - stab_pids_ypr[0]->output + stab_pids_ypr[1]->output - stab_pids_ypr[2]->output;
-		m1 = throttle + stab_pids_ypr[0]->output - stab_pids_ypr[1]->output - stab_pids_ypr[2]->output;
-		m2 = throttle - stab_pids_ypr[0]->output - stab_pids_ypr[1]->output + stab_pids_ypr[2]->output;
-		m3 = throttle + stab_pids_ypr[0]->output + stab_pids_ypr[1]->output + stab_pids_ypr[2]->output;
+		m0 = throttle - rate_pids_ypr[0]->output + rate_pids_ypr[1]->output - rate_pids_ypr[2]->output;
+		m1 = throttle + rate_pids_ypr[0]->output - rate_pids_ypr[1]->output - rate_pids_ypr[2]->output;
+		m2 = throttle - rate_pids_ypr[0]->output - rate_pids_ypr[1]->output + rate_pids_ypr[2]->output;
+		m3 = throttle + rate_pids_ypr[0]->output + rate_pids_ypr[1]->output + rate_pids_ypr[2]->output;
 
 		motors[0]->set_power(m0);
 		motors[1]->set_power(m1);
