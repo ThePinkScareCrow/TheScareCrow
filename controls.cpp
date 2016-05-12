@@ -49,7 +49,6 @@ float actual_ypr[3];
 
 PID *pids_ypr[3];
 float desired_ypr[3] = {0, 0, 0};
-float pids_output_ypr[3];
 float pid_tunings[3][3] = {
 	{0, 0, 0},
 	{0, 0, 0},
