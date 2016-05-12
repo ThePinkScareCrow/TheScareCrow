@@ -8,8 +8,6 @@ public:
 	float Ki;
 	float Kd;
 
-	float sample_time;
-
 	float delta_time;
 	float delta_feedback;
 	float error;
@@ -23,12 +21,11 @@ public:
 
 	void clear(void);
 	PID(float kp_new, float ki_new, float kd_new);
-	bool update(float desired_value, float feedback_value);
+	void update(float desired_value, float feedback_value);
 	void setKp(float proportional_gain);
 	void setKi(float integral_gain);
 	void setKd(float derivative_gain);
 	void setWindup(float windup);
-	void setSampleTime(float sample_time);
 
 private:
 	float last_error;

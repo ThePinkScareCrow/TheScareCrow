@@ -232,38 +232,32 @@ void loop()
 		for (int i = 0; i < 4; i++)
 			motors[i]->set_power(0);
         } else {
-		bool update_flag = false;
-
 		for (int i = 0; i < 3; i++) {
-			if (stab_pids_ypr[i]->update(desired_ypr[i], actual_ypr[i]))
-				update_flag = true;
+			stab_pids_ypr[i]->update(desired_ypr[i], actual_ypr[i]);
 		}
 
-		if (update_flag) {
-			/* Ensure that update_flag is set when throttle is changed */
+		/* The output of the PID must be positive in
+		 * the direction of positive rotation
+		 * (right-hand rule. Also given on MPU)
+		 *
+		 * For yaw, motors 0 & 2 move anticlockwise from above.
+		 */
+		float m0, m1, m2, m3;
 
-			/* The output of the PID must be positive in
-			 * the direction of positive rotation
-			 * (right-hand rule. Also given on MPU)
-			 *
-			 * For yaw, motors 0 & 2 move anticlockwise from above.
-			 */
-			float m0, m1, m2, m3;
+		m0 = throttle - stab_pids_ypr[0]->output + stab_pids_ypr[1]->output - stab_pids_ypr[2]->output;
+		m1 = throttle + stab_pids_ypr[0]->output - stab_pids_ypr[1]->output - stab_pids_ypr[2]->output;
+		m2 = throttle - stab_pids_ypr[0]->output - stab_pids_ypr[1]->output + stab_pids_ypr[2]->output;
+		m3 = throttle + stab_pids_ypr[0]->output + stab_pids_ypr[1]->output + stab_pids_ypr[2]->output;
 
-			m0 = throttle - stab_pids_ypr[0]->output + stab_pids_ypr[1]->output - stab_pids_ypr[2]->output;
-			m1 = throttle + stab_pids_ypr[0]->output - stab_pids_ypr[1]->output - stab_pids_ypr[2]->output;
-			m2 = throttle - stab_pids_ypr[0]->output - stab_pids_ypr[1]->output + stab_pids_ypr[2]->output;
-			m3 = throttle + stab_pids_ypr[0]->output + stab_pids_ypr[1]->output + stab_pids_ypr[2]->output;
-
-			motors[0]->set_power(m0);
-			motors[1]->set_power(m1);
-			motors[2]->set_power(m2);
-			motors[3]->set_power(m3);
+		motors[0]->set_power(m0);
+		motors[1]->set_power(m1);
+		motors[2]->set_power(m2);
+		motors[3]->set_power(m3);
 
 #if DEBUG_MODE_MOTORS
-			cout << m0 << " " << m1 << " " << m2 << " " << m3 << " |";
+		cout << m0 << " " << m1 << " " << m2 << " " << m3 << " |";
 #endif
-		}
+
 	}
 
 #if DEBUG_MODE

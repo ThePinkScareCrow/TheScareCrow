@@ -20,7 +20,6 @@ void PID::clear(void)
 
 PID::PID(float kp_new, float ki_new, float kd_new)
 {
-	sample_time = 0.003;
 	current_time = elapsed_time_in_s();
 	last_time = current_time;
 
@@ -30,45 +29,39 @@ PID::PID(float kp_new, float ki_new, float kd_new)
 	this->setKd(kd_new);
 }
 
-bool PID::update(float desired_value, float feedback_value)
+void PID::update(float desired_value, float feedback_value)
 {
 	current_time = elapsed_time_in_s();
         delta_time = current_time - last_time;
 
 	set_point = desired_value;
 
-        if (delta_time >= sample_time) {
-		error = difference_wrap_180(set_point, feedback_value);
-		delta_feedback = difference_wrap_180(last_feedback, feedback_value);
+        error = difference_wrap_180(set_point, feedback_value);
+        delta_feedback = difference_wrap_180(last_feedback, feedback_value);
 
-		p_term = Kp * error;
-		i_term += Ki * error * delta_time;
+        p_term = Kp * error;
+        i_term += Ki * error * delta_time;
 
-		if (i_term < -windup_guard)
-			i_term = -windup_guard;
-		else if (i_term > windup_guard)
-			i_term = windup_guard;
+        if (i_term < -windup_guard)
+            i_term = -windup_guard;
+        else if (i_term > windup_guard)
+            i_term = windup_guard;
 
-		d_term = 0.0;
-		if (delta_time > 0)
-			d_term = -Kd * (delta_feedback / delta_time);
+        d_term = 0.0;
+        if (delta_time > 0)
+            d_term = -Kd * (delta_feedback / delta_time);
 
-		last_time = current_time;
-		last_error = error;
-		last_feedback = feedback_value;
+        last_time = current_time;
+        last_error = error;
+        last_feedback = feedback_value;
 
-		output = p_term + i_term + d_term;
+        output = p_term + i_term + d_term;
 
 #if DEBUG_PID_OUTPUT
 
-		cout << p_term << " " << i_term << " " << d_term << " " << error;
+        cout << p_term << " " << i_term << " " << d_term << " " << error;
 
 #endif
-
-                return true;
-	}
-
-        return false;
 }
 
 void PID::setKp(float proportional_gain)
@@ -89,9 +82,4 @@ void PID::setKd(float derivative_gain)
 void PID::setWindup(float windup)
 {
         windup_guard = windup;
-}
-
-void PID::setSampleTime(float sample_time)
-{
-        sample_time = sample_time;
 }
