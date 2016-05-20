@@ -272,7 +272,7 @@ void loop()
         } else {
 		for (int i = 0; i < 3; i++) {
 			stab_pids_ypr[i]->update(desired_ypr[i], actual_ypr[i]);
-			rate_pids_ypr[i]->update(stab_pids_ypr[i]->output, rate_ypr);
+			rate_pids_ypr[i]->update(stab_pids_ypr[i]->output, rate_ypr[i]);
 		}
 
 		/* The output of the PID must be positive in
