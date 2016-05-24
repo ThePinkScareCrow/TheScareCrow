@@ -214,7 +214,6 @@ void loop()
 	uint16_t channels[NUM_OF_RADIO_CHANNELS];
 	float motor[NUM_OF_MOTORS];
 	int max_fifo_count = 0;
-	int16_t rate_ypr_tmp[3];
 
 	fifo_count = mpu.getFIFOCount();
 
@@ -238,7 +237,7 @@ void loop()
 		mpu.dmpGetQuaternion(&q, fifo_buffer);
 		mpu.dmpGetGravity(&gravity, &q);
 		mpu.dmpGetYawPitchRoll(actual_ypr, &q, &gravity);
-		mpu.dmpGetGyro(rate_ypr_tmp, fifo_buffer);
+		mpu.dmpGetGyro(rate_ypr, fifo_buffer);
 
 		/* Keep track of packets remaining */
 		fifo_count -= packet_size;
@@ -247,13 +246,6 @@ void loop()
 	/*  Convert radians to degrees */
 	for (int i = 0; i < 3; i++)
 		actual_ypr[i] *= 180 / M_PI;
-
-	/*
-	 * dmpGetGyro() gives us X/Y/Z values, map this to Yaw/Pitch/Roll.
-	 * While doing this convert the obtained values from rad/s to deg/s.
-	 */
-	for (int i = 0; i < 3; i++)
-		rate_ypr[i] = rate_ypr_tmp[2-i] * MATH_180_BY_PI;
 
 	/* Read from radio if data is available */
 	if (radio.available()) {
