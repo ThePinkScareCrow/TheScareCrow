@@ -49,7 +49,7 @@ VectorFloat gravity;         /* [x, y, z]            gravity vector */
 
 float actual_ypr[3];         /* Actual yaw/pitch/roll values obtained from the MPU */
 float desired_ypr[3] = {0};  /* Desired yaw/pitch/roll values obtained from the user */
-int16_t rate_ypr[3];         /* Actual angular velocity about yaw/pitch/roll in deg/s */
+int32_t rate_ypr[3];         /* Actual angular velocity about yaw/pitch/roll in deg/s */
 PID *stab_pids_ypr[3];       /* The PID to correct the orientation of the quadcopter (Angle) */
 PID *rate_pids_ypr[3];
 
