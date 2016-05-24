@@ -17,7 +17,7 @@ Motor::Motor(BlackLib::pwmName pin)
 Motor::~Motor()
 {
 	this->set_power(0);
-	free(this);
+	delete(this);
 }
 
 /*
