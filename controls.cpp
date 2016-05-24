@@ -109,8 +109,10 @@ void parse_and_execute(char *control_string)
 			switch(command[0]) {
 			case 's':
 				pid_type = stab;
+				break;
 			case 'r':
 				pid_type = rate;
+				break;
 			default:
 				fprintf(stderr, "Radio: Bad input");
 				return;
