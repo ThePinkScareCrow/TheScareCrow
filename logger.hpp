@@ -3,7 +3,10 @@
 
 #include <stdint.h>
 
-#define BUFFER_SIZE 330
+/* With the assumption of a maximum of 55 fields and 10 bytes per field */
+#define BUFFER_SIZE 550
+/* Number of times to retry writing a log line on each iteration */
+#define MAX_WRITING_TRIES 2
 
 class Logger
 {

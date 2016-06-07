@@ -102,7 +102,9 @@ void Logger::log(uint16_t fifo_count, float actual_ypr[3],
 
 		);
 
-	while (n < size) {
+        int retries = MAX_WRITING_TRIES;
+	while (n < size && retries != 0) {
 		n += write(fd, data_buffer + n, size - n);
+                retries--;
 	}
 }
