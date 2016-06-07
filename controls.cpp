@@ -49,7 +49,8 @@ VectorFloat gravity;         /* [x, y, z]            gravity vector */
 
 float actual_ypr[3];         /* Actual yaw/pitch/roll values obtained from the MPU */
 float desired_ypr[3] = {0};  /* Desired yaw/pitch/roll values obtained from the user */
-int32_t rate_ypr[3];         /* Actual angular velocity about yaw/pitch/roll in deg/s */
+float angle_offset_ypr[3];   /* offsets for correcting angle between MPU and quadcopter frame */
+int16_t rate_ypr[3];         /* Actual angular velocity about yaw/pitch/roll in deg/s */
 PID *stab_pids_ypr[3];       /* The PID to correct the orientation of the quadcopter (Angle) */
 PID *rate_pids_ypr[3];
 
@@ -66,6 +67,14 @@ const enum BlackLib::pwmName motor_pins[4] = {
 	BlackLib::EHRPWM2A,
 	BlackLib::EHRPWM2B
 };
+
+void level_mpu()
+{
+	angle_offset_ypr[0] = 0; /* keep yaw offset as 0 */
+	for (int i = 1; i < 3; i++)
+		angle_offset_ypr[i - 1] = - actual_ypr[i];
+}
+
 
 /* Parse a control string and execute the command */
 void parse_and_execute(char *control_string)
@@ -93,6 +102,8 @@ void parse_and_execute(char *control_string)
 			desired_ypr[1] = numeric_value;
 		else if (!strcmp(command, "r"))
 			desired_ypr[2] = numeric_value;
+                else if (!strcmp(command, "l"))
+			level_mpu();
 		else {
 			/* PID tuning update.  In this case, the
 			 * command would be of the form:
@@ -246,8 +257,9 @@ void loop()
 	}
 
 	/*  Convert radians to degrees */
-	for (int i = 0; i < 3; i++)
-		actual_ypr[i] *= 180 / M_PI;
+	for (int i = 0; i < 3; i++) {
+		actual_ypr[i] = (actual_ypr[i] * 180 / M_PI) + angle_offset_ypr[i];
+	}
 
 	/* Read from radio if data is available */
 	if (radio.available()) {
